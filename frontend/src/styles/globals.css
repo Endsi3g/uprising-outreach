@@ -1,0 +1,98 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Design tokens as CSS custom properties ────────────────────────────────── */
+:root {
+  /* Colors */
+  --color-bg: #f5f4ed;
+  --color-surface: #faf9f5;
+  --color-surface-white: #ffffff;
+  --color-cta: #c96442;
+  --color-cta-hover: #b55538;
+  --color-text: #141413;
+  --color-text-secondary: #5e5d59;
+  --color-text-tertiary: #87867f;
+  --color-border: #f0eee6;
+  --color-border-warm: #e8e6dc;
+  --color-focus: #3898ec;
+  --color-error: #b53333;
+
+  /* Typography */
+  --font-serif: "Anthropic Serif", Georgia, serif;
+  --font-sans: "Anthropic Sans", Arial, sans-serif;
+  --font-mono: "Anthropic Mono", monospace;
+
+  /* Spacing */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-2xl: 32px;
+
+  /* Shadows */
+  --shadow-ring: 0px 0px 0px 1px rgba(20, 20, 19, 0.12);
+  --shadow-ring-warm: 0px 0px 0px 1px #d1cfc5;
+  --shadow-ring-focus: 0px 0px 0px 2px #3898ec;
+  --shadow-whisper: rgba(0, 0, 0, 0.05) 0px 4px 24px;
+
+  /* Layout */
+  --container-max: 1200px;
+  --sidebar-width: 240px;
+}
+
+/* ── Base styles ─────────────────────────────────────────────────────────── */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.25;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Headings use serif */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-serif);
+  font-weight: 500;
+}
+
+/* Focus ring — only cool color in the system */
+:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ── Utility classes ──────────────────────────────────────────────────────── */
+.container {
+  max-width: var(--container-max);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+/* Ring shadow pattern — used instead of drop shadows */
+.shadow-ring {
+  box-shadow: var(--shadow-ring);
+}
+
+.shadow-ring-warm {
+  box-shadow: var(--shadow-ring-warm);
+}
+
+/* Typography scale helpers */
+.text-editorial {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  line-height: 1.2;
+}
