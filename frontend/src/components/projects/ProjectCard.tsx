@@ -19,7 +19,7 @@ export function ProjectCard({ project, isExample }: ProjectCardProps) {
   const timeAgo = formatDistanceToNow(updatedAt, { addSuffix: true, locale: fr });
 
   return (
-    <Link href={`/projects/${project.id}`}>
+    <Link href={`/projects/details?id=${project.id}`}>
       <motion.div
         whileHover={{ y: -2, borderColor: "var(--color-border-warm)" }}
         className="group h-full p-6 bg-[--color-surface] border border-[--color-border] rounded-2xl flex flex-col transition-all cursor-pointer hover:shadow-whisper"

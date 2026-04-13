@@ -19,7 +19,7 @@ export default function NewProjectPage() {
       apiClient.post<Project>("/projects", data),
     onSuccess: (project) => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
-      router.push(`/projects/${project.id}`);
+      router.push(`/projects/details?id=${project.id}`);
     }
   });
 
