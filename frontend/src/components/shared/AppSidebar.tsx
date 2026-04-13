@@ -151,7 +151,13 @@ function NavItem({
 
 export function AppSidebar({ collapsed, onToggle }: SidebarProps) {
   const pathname = usePathname();
-  const { theme, toggle } = useTheme();
+  const { theme, resolvedTheme, setTheme } = useTheme() as any;
+
+  const handleToggle = () => {
+    if (theme === "dark") setTheme("light");
+    else if (theme === "light") setTheme("auto");
+    else setTheme("dark");
+  };
 
   return (
     <motion.aside
@@ -258,15 +264,15 @@ export function AppSidebar({ collapsed, onToggle }: SidebarProps) {
             className="flex items-center justify-between px-4 py-2.5"
           >
             <span className="text-xs text-[--color-text-tertiary]">
-              {theme === "dark" ? "Mode sombre" : "Mode clair"}
+              {theme === "auto" ? "Système" : theme === "dark" ? "Sombre" : "Clair"}
             </span>
             <button
-              onClick={toggle}
+              onClick={handleToggle}
               className="relative w-9 h-5 rounded-full transition-colors flex-shrink-0"
-              style={{ background: theme === "dark" ? "var(--color-cta)" : "var(--color-border-warm)" }}
+              style={{ background: resolvedTheme === "dark" ? "var(--color-cta)" : "var(--color-border-warm)" }}
             >
               <motion.span
-                animate={{ x: theme === "dark" ? 18 : 2 }}
+                animate={{ x: resolvedTheme === "dark" ? 18 : 2 }}
                 className="absolute top-0.5 left-0 w-4 h-4 bg-white rounded-full shadow-sm"
                 transition={{ type: "spring", stiffness: 500, damping: 30 }}
               />
@@ -276,10 +282,10 @@ export function AppSidebar({ collapsed, onToggle }: SidebarProps) {
 
         {collapsed && (
           <button
-            onClick={toggle}
+            onClick={handleToggle}
             className="w-full h-10 flex items-center justify-center text-[--color-text-tertiary] hover:text-[--color-text] transition-colors"
           >
-            {theme === "dark" ? "☀" : "☽"}
+            {theme === "auto" ? "⚙️" : theme === "dark" ? "☽" : "☀"}
           </button>
         )}
 

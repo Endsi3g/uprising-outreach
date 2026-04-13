@@ -82,7 +82,7 @@ export default function SettingsPage() {
 }
 
 function GeneralSettings() {
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme } = useTheme() as any;
   const [animation, setAnimation] = useState("auto");
   const [font, setFont] = useState("default");
   const [vocal, setVocal] = useState("buttery");
