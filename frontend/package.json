@@ -1,6 +1,8 @@
 {
   "name": "outreach-frontend",
   "version": "0.1.0",
+  "description": "ProspectOS - Système d'Intelligence Commerciale",
+  "author": "Uprising Studio",
   "private": true,
   "main": "main.js",
   "scripts": {
@@ -20,6 +22,12 @@
     "directories": {
       "output": "dist"
     },
+    "files": [
+      "out/**/*",
+      "main.js",
+      "preload.js",
+      "package.json"
+    ],
     "win": {
       "target": "nsis"
     }

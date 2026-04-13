@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api";
@@ -15,7 +15,7 @@ interface Message {
   content: string;
 }
 
-export default function ProjectDetailPage() {
+function ProjectDetailContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const id = searchParams.get("id");
@@ -28,6 +28,7 @@ export default function ProjectDetailPage() {
   const { data: project, isLoading } = useQuery<Project>({
     queryKey: ["projects", id],
     queryFn: () => apiClient.get<Project>(`/projects/${id}`),
+    enabled: !!id,
   });
 
   const toggleFavoriteMutation = useMutation({
@@ -211,5 +212,13 @@ export default function ProjectDetailPage() {
       {/* Right Sidebar */}
       <ProjectSidebar project={project} />
     </div>
+  );
+}
+
+export default function ProjectDetailPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-full animate-pulse font-serif text-[--color-text-tertiary]">Chargement...</div>}>
+      <ProjectDetailContent />
+    </Suspense>
   );
 }
