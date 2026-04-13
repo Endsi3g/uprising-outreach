@@ -21,14 +21,13 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           id={inputId}
           className={clsx(
             "w-full px-3 py-2 text-sm rounded-md border transition-colors",
-            "placeholder:text-warm-gray-400",
-            error ? "border-red-400" : "border-warm-gray-200 focus:border-focus",
             "focus:outline-none focus:ring-1 focus:ring-focus",
             className
           )}
           style={{
             background: "var(--color-surface-white)",
             color: "var(--color-text)",
+            borderColor: error ? "var(--color-error)" : "var(--color-border)",
           }}
           {...props}
         />
@@ -61,14 +60,13 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           id={inputId}
           className={clsx(
             "w-full px-3 py-2 text-sm rounded-md border transition-colors resize-y",
-            "placeholder:text-warm-gray-400",
-            error ? "border-red-400" : "border-warm-gray-200 focus:border-focus",
             "focus:outline-none focus:ring-1 focus:ring-focus",
             className
           )}
           style={{
             background: "var(--color-surface-white)",
             color: "var(--color-text)",
+            borderColor: error ? "var(--color-error)" : "var(--color-border)",
             minHeight: "80px",
           }}
           {...props}

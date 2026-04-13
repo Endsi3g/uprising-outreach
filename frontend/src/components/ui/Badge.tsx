@@ -9,12 +9,12 @@ interface BadgeProps {
 }
 
 const colorStyles: Record<BadgeColor, React.CSSProperties> = {
-  default: { background: "var(--color-border-warm)", color: "var(--color-text-secondary)" },
-  green: { background: "#ecfdf5", color: "#166534" },
-  amber: { background: "#fffbeb", color: "#92400e" },
-  red: { background: "#fef2f2", color: "#991b1b" },
-  blue: { background: "#eff6ff", color: "#1d4ed8" },
-  terracotta: { background: "#fef3ee", color: "var(--color-cta)" },
+  default: { background: "var(--color-surface-white)", color: "var(--color-text-secondary)" },
+  green: { background: "rgba(22, 101, 52, 0.4)", color: "#4ade80" },
+  amber: { background: "rgba(146, 64, 14, 0.4)", color: "#fbbf24" },
+  red: { background: "rgba(153, 27, 27, 0.4)", color: "#f87171" },
+  blue: { background: "rgba(30, 58, 138, 0.4)", color: "#60a5fa" },
+  terracotta: { background: "rgba(201, 100, 66, 0.2)", color: "var(--color-cta)" },
 };
 
 export function Badge({ children, color = "default", className }: BadgeProps) {

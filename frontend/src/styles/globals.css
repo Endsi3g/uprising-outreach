@@ -2,28 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Design tokens as CSS custom properties ────────────────────────────────── */
+/* ── Shared variables (theme-independent) ────────────────────────────────── */
 :root {
-  /* Colors */
-  --color-bg: #f5f4ed;
-  --color-surface: #faf9f5;
-  --color-surface-white: #ffffff;
-  --color-cta: #c96442;
-  --color-cta-hover: #b55538;
-  --color-text: #141413;
-  --color-text-secondary: #5e5d59;
-  --color-text-tertiary: #87867f;
-  --color-border: #f0eee6;
-  --color-border-warm: #e8e6dc;
-  --color-focus: #3898ec;
-  --color-error: #b53333;
-
   /* Typography */
-  --font-serif: "Anthropic Serif", Georgia, serif;
-  --font-sans: "Anthropic Sans", Arial, sans-serif;
-  --font-mono: "Anthropic Mono", monospace;
+  --font-serif: "Georgia", "Times New Roman", serif;
+  --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "Cascadia Code", "Fira Code", monospace;
 
-  /* Spacing */
+  /* Spacing / Layout */
   --radius-xs: 4px;
   --radius-sm: 6px;
   --radius: 8px;
@@ -31,48 +17,94 @@
   --radius-lg: 16px;
   --radius-xl: 24px;
   --radius-2xl: 32px;
+  --container-max: 1200px;
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 52px;
 
-  /* Shadows */
-  --shadow-ring: 0px 0px 0px 1px rgba(20, 20, 19, 0.12);
+  /* Light theme (default) */
+  --color-bg: #f5f4ed;
+  --color-surface: #faf9f5;
+  --color-surface-2: #f0eee6;
+  --color-surface-white: #ffffff;
+  --color-cta: #c96442;
+  --color-cta-hover: #b55538;
+  --color-text: #141413;
+  --color-text-secondary: #5e5d59;
+  --color-text-tertiary: #87867f;
+  --color-border: #e8e6dc;
+  --color-border-subtle: #f0eee6;
+  --color-border-warm: #d1cfc5;
+  --color-focus: #3898ec;
+  --color-error: #b53333;
+  --shadow-ring: 0px 0px 0px 1px rgba(20,20,19,0.08);
   --shadow-ring-warm: 0px 0px 0px 1px #d1cfc5;
   --shadow-ring-focus: 0px 0px 0px 2px #3898ec;
-  --shadow-whisper: rgba(0, 0, 0, 0.05) 0px 4px 24px;
-
-  /* Layout */
-  --container-max: 1200px;
-  --sidebar-width: 240px;
+  --shadow-whisper: rgba(0,0,0,0.05) 0px 4px 24px;
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
 }
 
-/* ── Base styles ─────────────────────────────────────────────────────────── */
-* {
-  box-sizing: border-box;
+/* ── Dark theme ──────────────────────────────────────────────────────────── */
+[data-theme="dark"] {
+  --color-bg: #141413;
+  --color-surface: #1e1e1c;
+  --color-surface-2: #2a2a28;
+  --color-surface-white: #3d3d3a;
+  --color-cta: #c96442;
+  --color-cta-hover: #b55538;
+  --color-text: #faf9f5;
+  --color-text-secondary: #b0aea5;
+  --color-text-tertiary: #87867f;
+  --color-border: #2a2a28;
+  --color-border-subtle: #3d3d3a;
+  --color-border-warm: #4d4c48;
+  --color-focus: #3898ec;
+  --color-error: #e05454;
+  --shadow-ring: 0px 0px 0px 1px rgba(255,255,255,0.06);
+  --shadow-ring-warm: 0px 0px 0px 1px #4d4c48;
+  --shadow-ring-focus: 0px 0px 0px 2px #3898ec;
+  --shadow-whisper: rgba(0,0,0,0.4) 0px 4px 24px;
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
 }
 
-html,
-body {
-  background-color: var(--color-bg);
-  color: var(--color-text);
-  font-family: var(--font-sans);
+/* ── Base ──────────────────────────────────────────────────────────────── */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
   font-size: 16px;
-  line-height: 1.25;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Headings use serif */
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.5;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-serif);
   font-weight: 500;
 }
 
-/* Focus ring — only cool color in the system */
 :focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
   border-radius: var(--radius-sm);
 }
 
-/* ── Utility classes ──────────────────────────────────────────────────────── */
+/* ── Global Scrollbar Suppression ── */
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
+}
+
+/* ── Utility classes ─────────────────────────────────────────────────── */
 .container {
   max-width: var(--container-max);
   margin-left: auto;
@@ -81,18 +113,64 @@ h1, h2, h3, h4, h5, h6 {
   padding-right: 1.5rem;
 }
 
-/* Ring shadow pattern — used instead of drop shadows */
-.shadow-ring {
-  box-shadow: var(--shadow-ring);
+.shadow-ring { box-shadow: var(--shadow-ring); }
+.shadow-ring-warm { box-shadow: var(--shadow-ring-warm); }
+.text-editorial { font-family: var(--font-serif); font-weight: 500; line-height: 1.2; }
+
+/* ── Animations ──────────────────────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-.shadow-ring-warm {
-  box-shadow: var(--shadow-ring-warm);
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: translateX(0); }
 }
 
-/* Typography scale helpers */
-.text-editorial {
-  font-family: var(--font-serif);
-  font-weight: 500;
-  line-height: 1.2;
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-fade-in { animation: fadeIn 0.3s ease forwards; }
+.animate-slide-in-left { animation: slideInLeft 0.25s ease forwards; }
+.animate-pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+
+/* Skeleton loading shimmer */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface) 25%,
+    var(--color-surface-2) 50%,
+    var(--color-surface) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius);
+}
+
+/* Sidebar transition */
+.sidebar-transition {
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+/* Hover lift effect for cards */
+.card-hover {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.card-hover:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-whisper);
+}
+
+/* Smooth color transitions for interactive elements */
+.interactive {
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
 }

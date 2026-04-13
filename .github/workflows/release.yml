@@ -12,6 +12,8 @@ jobs:
   release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -20,7 +22,6 @@ jobs:
       - name: Generate release notes
         id: release_notes
         run: |
-          # Get commits since last tag
           PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
           if [ -n "$PREV_TAG" ]; then
             NOTES=$(git log ${PREV_TAG}..HEAD --oneline --no-merges | head -50)
@@ -32,14 +33,45 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create release
+        id: create_release
         uses: softprops/action-gh-release@v2
         with:
           body: |
             ## Changes
-
             ${{ steps.release_notes.outputs.NOTES }}
-
-            ---
-            See [NEXT_STEPS.md](docs/NEXT_STEPS.md) for the roadmap.
           draft: false
           prerelease: ${{ contains(github.ref_name, '-') }}
+
+  build-electron:
+    name: Build & Upload Electron Exe
+    needs: release
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build Electron App
+        run: |
+          cd frontend
+          npm install
+          npm run build
+          npm run build:electron
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            frontend/dist/*.exe
+            frontend/dist/*.blockmap
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -10,6 +10,10 @@ export interface Lead {
   source: string | null;
   notes: string | null;
   enrichment_status: string | null;
+  full_name?: string;
+  company_name?: string;
+  email?: string;
+  title?: string;
   next_action: string | null;
   created_at: string;
   updated_at: string;

@@ -75,6 +75,12 @@ def create_app() -> FastAPI:
     from app.jobs.router import router as jobs_router
     app.include_router(jobs_router, prefix="/api/v1")
 
+    from app.customization.router import router as customization_router
+    app.include_router(customization_router, prefix="/api/v1")
+
+    from app.projects.router import router as projects_router
+    app.include_router(projects_router, prefix="/api/v1")
+
     return app
 
 

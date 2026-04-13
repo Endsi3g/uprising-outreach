@@ -1,88 +1,201 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { apiClient } from "@/lib/api";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { Button, Badge, Card } from "@/components/ui";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { Spinner } from "@/components/ui/Spinner";
-import type { Campaign } from "@/types/campaigns";
+import { Button, Input } from "@/components/ui";
+import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
+import { cn } from "@/lib/utils";
 
-const STATUS_COLOR: Record<string, "green" | "amber" | "default" | "blue" | "red"> = {
-  active: "green",
-  paused: "amber",
-  draft: "default",
-  completed: "blue",
-  archived: "red",
-};
+interface Step {
+  id: string;
+  type: "email" | "wait";
+  title: string;
+  delay?: string;
+  template?: string;
+}
 
 export default function CampaignsPage() {
-  const { data: campaigns, isLoading } = useQuery<{ data: Campaign[] }>({
-    queryKey: ["campaigns"],
-    queryFn: () => apiClient.get("/campaigns?limit=50"),
-    retry: false,
-  });
+  const [campaignName, setCampaignName] = useState("SaaS Outreach Q2");
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [steps, setSteps] = useState<Step[]>([
+    { id: "1", type: "email", title: "Premier contact", template: "SaaS Outreach v1" },
+    { id: "2", type: "wait", title: "Pause", delay: "2 jours" },
+    { id: "3", type: "email", title: "Suivi de valeur", template: "Follow-up - Value prop" },
+  ]);
+
+  const addStep = (type: "email" | "wait") => {
+    const newStep: Step = {
+      id: Math.random().toString(36).substr(2, 9),
+      type,
+      title: type === "email" ? "Nouvel Email" : "Nouvelle Attente",
+      delay: type === "wait" ? "3 jours" : undefined,
+      template: type === "email" ? "Template par défaut" : undefined,
+    };
+    setSteps([...steps, newStep]);
+  };
+
+  const removeStep = (id: string) => {
+    setSteps(steps.filter(s => s.id !== id));
+  };
+
+  const updateStep = (id: string, updates: Partial<Step>) => {
+    setSteps(steps.map(s => s.id === id ? { ...s, ...updates } : s));
+  };
 
   return (
-    <div className="p-6 max-w-[1200px] mx-auto">
-      <PageHeader
-        title="Campaigns"
-        description="Build and manage email outreach sequences."
-        actions={
-          <Button variant="primary" size="sm" disabled title="Campaign builder available in Phase 2">
-            New campaign
-          </Button>
-        }
-      />
+    <div className="flex flex-col h-full bg-[--color-bg]">
+      <div className="px-8 pt-8 pb-4">
+        <div className="flex items-center justify-between mb-2">
+           <div className="flex items-center gap-3">
+             {isEditingName ? (
+               <div className="flex items-center gap-2">
+                 <input
+                   autoFocus
+                   value={campaignName}
+                   onChange={(e) => setCampaignName(e.target.value)}
+                   onBlur={() => setIsEditingName(false)}
+                   onKeyDown={(e) => e.key === "Enter" && setIsEditingName(false)}
+                   className="text-2xl font-medium font-serif bg-transparent border-b border-[--color-cta] outline-none text-[--color-text]"
+                 />
+               </div>
+             ) : (
+               <h1 
+                 onClick={() => setIsEditingName(true)}
+                 className="text-2xl font-medium font-serif text-[--color-text] cursor-pointer hover:text-[--color-cta] transition-colors"
+               >
+                 {campaignName}
+               </h1>
+             )}
+             <span className="text-xs px-2 py-0.5 rounded bg-[--color-surface-2] text-[--color-text-tertiary] font-medium">Draft</span>
+           </div>
+           <div className="flex gap-2">
+              <Button variant="secondary" size="sm">Sauvegarder</Button>
+              <Button variant="primary" size="sm">Lancer la campagne</Button>
+           </div>
+        </div>
+        <p className="text-sm text-[--color-text-secondary]">Créez des parcours automatisés pour vos prospects.</p>
+      </div>
 
-      {/* Phase banner */}
-      <div
-        className="mb-6 px-4 py-3 rounded-lg text-sm flex items-start gap-3"
-        style={{
-          background: "#fef3ee",
-          border: "1px solid #fcd9c9",
-          color: "var(--color-cta)",
-        }}
-      >
-        <span className="text-base">◎</span>
-        <div>
-          <span className="font-medium">Campaign builder coming in Phase 2</span>
-          <p className="mt-0.5 text-xs" style={{ color: "#a0522d" }}>
-            First: complete lead enrichment, ICP scoring, and template library. Then campaigns unlock.
-            See <code>docs/NEXT_STEPS.md</code> for the full roadmap.
-          </p>
+      <div className="flex-1 overflow-y-auto px-8 pb-32 custom-scrollbar">
+        <div className="max-w-2xl mx-auto py-12">
+          <LayoutGroup>
+            <div className="relative">
+              {/* Sequence start indicator */}
+              <div className="flex justify-center mb-10">
+                <motion.div 
+                  layout
+                  className="px-4 py-2 rounded-full bg-[--color-surface-2] border border-[--color-border] text-[10px] font-bold uppercase tracking-widest text-[--color-text-tertiary] flex items-center gap-2"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                  Début de la séquence
+                </motion.div>
+              </div>
+
+              <AnimatePresence mode="popLayout">
+                {steps.map((step, index) => (
+                  <motion.div
+                    key={step.id}
+                    layout
+                    initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
+                    className="relative"
+                  >
+                    {/* Vertical connector line */}
+                    {index < steps.length && (
+                      <div className="absolute left-1/2 -top-6 bottom-full w-px bg-[--color-border] -z-10 h-6" />
+                    )}
+
+                    <div className={cn(
+                      "group relative rounded-2xl border p-6 transition-all duration-300",
+                      step.type === "email" 
+                        ? "bg-[--color-bg] border-[--color-border] shadow-sm hover:shadow-md" 
+                        : "bg-[--color-surface] border-dashed border-[--color-border] hover:border-[--color-cta]/20"
+                    )}>
+                      <div className="flex items-center justify-between mb-5">
+                        <div className="flex items-center gap-4">
+                          <div className={cn(
+                            "w-11 h-11 rounded-xl flex items-center justify-center text-xl transition-all",
+                            step.type === "email" ? "bg-[--color-surface-2] text-[--color-cta]" : "bg-[--color-surface-white] text-[--color-text-tertiary] group-hover:bg-[--color-surface-2]"
+                          )}>
+                            {step.type === "email" ? "✉" : "⏳"}
+                          </div>
+                          <div>
+                             <input 
+                               value={step.title}
+                               onChange={(e) => updateStep(step.id, { title: e.target.value })}
+                               className="text-sm font-semibold text-[--color-text] bg-transparent outline-none border-b border-transparent hover:border-[--color-border] transition-colors"
+                             />
+                            <p className="text-[10px] text-[--color-text-tertiary] uppercase tracking-widest font-bold mt-0.5">
+                              {step.type === "email" ? "Action: Envoi Email" : "Condition: Délai"}
+                            </p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => removeStep(step.id)}
+                          className="opacity-0 group-hover:opacity-100 p-2 hover:bg-red-500/10 hover:text-red-500 rounded-lg transition-all text-[--color-text-tertiary]"
+                        >
+                          ✕
+                        </button>
+                      </div>
+
+                      {step.type === "email" ? (
+                        <div className="p-4 rounded-xl bg-[--color-surface] border border-[--color-border-subtle] flex items-center justify-between hover:bg-[--color-surface-2] transition-colors cursor-pointer group/inner">
+                          <div className="flex items-center gap-3">
+                            <span className="text-xl">📄</span>
+                            <span className="text-sm font-medium text-[--color-text-secondary] group-hover/inner:text-[--color-text] transition-colors">
+                              {step.template}
+                            </span>
+                          </div>
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-[--color-cta]">Éditer</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-3 px-1">
+                          <span className="text-[11px] font-bold uppercase tracking-widest text-[--color-text-tertiary]">Attendre:</span>
+                          <input 
+                            type="text" 
+                            value={step.delay} 
+                            onChange={(e) => updateStep(step.id, { delay: e.target.value })}
+                            className="bg-transparent text-sm font-semibold text-[--color-text] outline-none border-b border-[--color-border] w-24 text-center focus:border-[--color-cta]"
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Vertical connector line (small) */}
+                    <div className="flex justify-center py-3">
+                      <div className="w-px h-6 bg-[--color-border]" />
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+
+              {/* Add Step Cluster */}
+              <motion.div 
+                layout
+                className="flex items-center justify-center gap-4 mt-4"
+              >
+                <motion.button 
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => addStep("email")}
+                  className="flex items-center gap-2.5 px-6 py-3.5 rounded-full bg-[--color-surface] border border-[--color-border] text-xs font-bold uppercase tracking-widest text-[--color-text-secondary] hover:text-[--color-cta] hover:border-[--color-cta] hover:bg-white transition-all shadow-sm"
+                >
+                  <span className="text-lg">+</span> Email
+                </motion.button>
+                <motion.button 
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => addStep("wait")}
+                  className="flex items-center gap-2.5 px-6 py-3.5 rounded-full bg-[--color-surface] border border-[--color-border] text-xs font-bold uppercase tracking-widest text-[--color-text-secondary] hover:text-[--color-text] hover:bg-white transition-all shadow-sm"
+                >
+                  <span className="text-lg">+</span> Attente
+                </motion.button>
+              </motion.div>
+            </div>
+          </LayoutGroup>
         </div>
       </div>
-
-      {/* What will be here */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        {[
-          { icon: "⟳", title: "Sequence builder", desc: "Multi-step email sequences with branching logic, delays, and reply conditions." },
-          { icon: "⚡", title: "Launch validation", desc: "Automatic DNS checks + email verification gates before any send." },
-          { icon: "◎", title: "Send scheduling", desc: "Per-mailbox daily limits, optimal send windows, and warmup awareness." },
-        ].map(({ icon, title, desc }) => (
-          <Card key={title} padding="md" style={{ opacity: 0.6 }}>
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-sm mb-3"
-              style={{ background: "var(--color-border-warm)" }}
-            >
-              {icon}
-            </div>
-            <h3 className="text-sm font-medium mb-1" style={{ color: "var(--color-text)" }}>{title}</h3>
-            <p className="text-xs" style={{ color: "var(--color-text-secondary)", lineHeight: 1.6 }}>{desc}</p>
-          </Card>
-        ))}
-      </div>
-
-      {isLoading ? (
-        <div className="flex justify-center py-12"><Spinner /></div>
-      ) : (
-        <EmptyState
-          title="No campaigns yet"
-          description="Complete Phase 2 setup to start building campaigns."
-        />
-      )}
     </div>
   );
 }
