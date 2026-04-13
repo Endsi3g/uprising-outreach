@@ -35,7 +35,7 @@ export function ProjectCard({ project, isExample }: ProjectCardProps) {
 
         {isExample && (
           <div className="mb-4">
-            <Badge variant="secondary" className="bg-[--color-surface-2] text-[--color-text-tertiary] border-none font-normal">
+            <Badge color="default" className="bg-[--color-surface-2] text-[--color-text-tertiary] border-none font-normal">
               Projet exemple
             </Badge>
           </div>
