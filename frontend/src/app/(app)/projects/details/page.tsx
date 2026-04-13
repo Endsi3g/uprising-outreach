@@ -15,7 +15,15 @@ interface Message {
   content: string;
 }
 
-function ProjectDetailContent() {
+export default function ProjectDetailsPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-full text-[--color-text-tertiary] animate-pulse font-serif">Chargement...</div>}>
+      <ProjectDetailsContent />
+    </Suspense>
+  );
+}
+
+function ProjectDetailsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const id = searchParams.get("id");
@@ -28,7 +36,7 @@ function ProjectDetailContent() {
   const { data: project, isLoading } = useQuery<Project>({
     queryKey: ["projects", id],
     queryFn: () => apiClient.get<Project>(`/projects/${id}`),
-    enabled: !!id,
+    enabled: !!id
   });
 
   const toggleFavoriteMutation = useMutation({
@@ -51,7 +59,6 @@ function ProjectDetailContent() {
     setPrompt("");
     setIsTyping(true);
 
-    // AI logic simulation (Ollama or similar would be here)
     await new Promise(r => setTimeout(r, 1000));
     
     const response = "J'ai bien pris en compte les instructions et les fichiers de votre projet. Comment puis-je vous aider spécifiquement aujourd'hui ?";
@@ -69,9 +76,7 @@ function ProjectDetailContent() {
 
   return (
     <div className="flex h-full bg-[--color-bg] overflow-hidden">
-      {/* Main Chat Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Header */}
         <div className="h-14 px-6 border-b border-[--color-border] flex items-center justify-between bg-[--color-bg] z-10">
           <div className="flex items-center gap-4">
             <button 
@@ -104,7 +109,6 @@ function ProjectDetailContent() {
           </div>
         </div>
 
-        {/* Chat Content */}
         <div 
           ref={scrollRef}
           className={cn(
@@ -166,7 +170,6 @@ function ProjectDetailContent() {
           </div>
         </div>
 
-        {/* Composer Area */}
         <div className="w-full max-w-[760px] mx-auto pb-10 px-6 flex-shrink-0">
           <div className="relative rounded-2xl border border-[--color-border] bg-[--color-bg] shadow-whisper overflow-hidden transition-all focus-within:border-[--color-border-warm]">
             <textarea
@@ -202,23 +205,10 @@ function ProjectDetailContent() {
               </div>
             </div>
           </div>
-          
-          <p className="text-[10px] text-center mt-3 text-[--color-text-tertiary] uppercase tracking-tighter opacity-50">
-            Dernier message il y a quelques instants
-          </p>
         </div>
       </div>
 
-      {/* Right Sidebar */}
       <ProjectSidebar project={project} />
     </div>
-  );
-}
-
-export default function ProjectDetailPage() {
-  return (
-    <Suspense fallback={<div className="flex items-center justify-center h-full animate-pulse font-serif text-[--color-text-tertiary]">Chargement...</div>}>
-      <ProjectDetailContent />
-    </Suspense>
   );
 }
