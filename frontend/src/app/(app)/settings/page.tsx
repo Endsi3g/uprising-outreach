@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useTheme } from "@/components/shared/ThemeProvider";
 
 type SettingTab = 
   | "general" 
