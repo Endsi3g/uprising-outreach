@@ -103,12 +103,12 @@ function GeneralSettings() {
             <div className="grid grid-cols-3 gap-4">
               {[
                 { id: "light", label: "Simplifiée", preview: "bg-[#FAFAFA]" },
-                { id: "system", label: "Auto", preview: "bg-gradient-to-r from-[#FAFAFA] to-[#141413]" },
+                { id: "auto", label: "Auto", preview: "bg-gradient-to-r from-[#FAFAFA] to-[#141413]" },
                 { id: "dark", label: "Sombre", preview: "bg-[#141413]" }
               ].map((m) => (
                 <button
                   key={m.id}
-                  onClick={() => setTheme(m.id)}
+                  onClick={() => setTheme(m.id as any)}
                   className={cn(
                     "group flex flex-col gap-3 transition-all",
                     theme === m.id ? "opacity-100" : "opacity-60 hover:opacity-80"
