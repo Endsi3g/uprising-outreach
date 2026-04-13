@@ -62,13 +62,15 @@ Si vous rencontrez des erreurs `ENOENT` (fichier non trouvé) lors de l'étape `
 Remove-Item -LiteralPath "out", ".next", "dist" -Recurse -Force -ErrorAction SilentlyContinue; npm run build:electron
 ```
 
-## 6. Scripts Recommandés
+## 7. Erreur de Symlink (Permissions Windows)
 
-Dans `frontend/package.json`, utilisez ces scripts pour plus de fiabilité :
+Lors de l'extraction des outils de signature (`winCodeSign`), `electron-builder` peut échouer car il tente de créer des liens symboliques pour macOS alors que vous êtes sur Windows.
 
-```json
-"scripts": {
-  "build": "next build",
-  "build:electron": "next build && electron-builder --win --x64"
-}
-```
+**Problème** : `ERROR: Cannot create symbolic link : Le client ne dispose pas d'un privilège nécessaire.`
+**Solution** : 
+- Désactivez temporairement la signature de code si elle n'est pas configurée.
+- Exécutez le script avec des variables d'environnement pour ignorer la signature :
+  ```powershell
+  $env:CSC_LINK=$null; $env:WIN_CSC_LINK=$null; npm run build:electron
+  ```
+- Ou activez le **Mode Développeur** dans les paramètres de Windows (Windows Settings > Privacy & Security > For developers > Developer Mode).
