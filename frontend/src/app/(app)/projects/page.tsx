@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { apiClient } from "@/lib/api";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Input, Button, Modal, Textarea } from "@/components/ui";
@@ -12,6 +13,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 export default function ProjectsPage() {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("activity");
@@ -55,7 +57,7 @@ export default function ProjectsPage() {
               <Button 
                 variant="primary" 
                 size="md" 
-                onClick={() => setIsCreateModalOpen(true)}
+                onClick={() => router.push("/projects/new")}
                 className="gap-2 shadow-sm"
               >
                 <Plus size={18} />
@@ -126,7 +128,7 @@ export default function ProjectsPage() {
 
       {/* Create Project Modal */}
       <Modal 
-        isOpen={isCreateModalOpen} 
+        open={isCreateModalOpen} 
         onClose={() => setIsCreateModalOpen(false)}
         title="Nouveau Projet"
       >
