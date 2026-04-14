@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useRef, useCallback, useTransition, useState } from "react";
 import { cn } from "@/lib/utils";
 import {
@@ -22,6 +24,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import * as React from "react"
+import { useRouter } from "next/navigation";
 import { apiClient } from "@/lib/api";
 import { useChatStore, Message } from "@/store/chat";
 import gsap from "gsap";
@@ -175,6 +178,7 @@ function ChatWaveform({ isActive }: { isActive: boolean }) {
 }
 
 export function AnimatedAIChat() {
+    const router = useRouter();
     const { 
         sessions, 
         activeSessionId, 
@@ -210,21 +214,24 @@ export function AnimatedAIChat() {
 
     // GSAP Staggered Entrance
     useEffect(() => {
-        if (messagesRef.current && messages.length > 0) {
-            gsap.fromTo(
-                messagesRef.current.children,
-                { opacity: 0, y: 15 },
-                { 
-                    opacity: 1, 
-                    y: 0, 
-                    duration: 0.4, 
-                    stagger: 0.08, 
-                    ease: "power2.out",
-                    overwrite: "auto"
-                }
-            );
+        if (messages.length === 1 && messagesRef.current) {
+            const ctx = gsap.context(() => {
+                gsap.fromTo(
+                    messagesRef.current!.children,
+                    { opacity: 0, y: 15 },
+                    { 
+                        opacity: 1, 
+                        y: 0, 
+                        duration: 0.4, 
+                        stagger: 0.08, 
+                        ease: "power2.out",
+                        overwrite: "auto"
+                    }
+                );
+            });
+            return () => ctx.revert();
         }
-    }, [messages.length === 1]); // Only stagger on first load or brand new conversation
+    }, [messages.length]); // Only stagger on first load or brand new conversation
 
     // Ensure we have a session on mount
     useEffect(() => {
@@ -244,6 +251,18 @@ export function AnimatedAIChat() {
     }, [messages, isTyping, isThinking]);
 
     const commandSuggestions: CommandSuggestion[] = [
+        { 
+            icon: <Mail className="w-4 h-4" />, 
+            label: "Cold Email", 
+            description: "Rédiger un email de prospection (1 CTA, peer-to-peer)", 
+            prefix: "/email" 
+        },
+        { 
+            icon: <Sparkles className="w-4 h-4" />, 
+            label: "Find Leads", 
+            description: "Rechercher des leads sur Maps via Apify", 
+            prefix: "/find-leads" 
+        },
         { 
             icon: (
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
