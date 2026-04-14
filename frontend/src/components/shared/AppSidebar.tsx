@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useTheme } from "@/components/shared/ThemeProvider";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useAIChat } from "@/store/useAIChat";
 
 const NAV_TOP = [
   { 
@@ -52,6 +53,7 @@ const NAV_SECTIONS = [
   { icon: "PipelineIcon", label: "Pipeline", href: "/pipeline" },
   { icon: "InboxIcon", label: "Inbox", href: "/inbox" },
   { icon: "AnalyticsIcon", label: "Analytics", href: "/analytics" },
+  { icon: "AIPageIcon", label: "AI Chat", href: "/ai" },
 ];
 
 const RECENTS = [
@@ -90,6 +92,11 @@ const ICONS: any = {
   AnalyticsIcon: (props: any) => (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
       <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+    </svg>
+  ),
+  AIPageIcon: (props: any) => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 8v4l3 3"/><circle cx="19" cy="5" r="3"/>
     </svg>
   ),
 };
@@ -152,6 +159,7 @@ function NavItem({
 export function AppSidebar({ collapsed, onToggle }: SidebarProps) {
   const pathname = usePathname();
   const { theme, resolvedTheme, setTheme } = useTheme() as any;
+  const { toggleSidebar: toggleAI } = useAIChat();
 
   const handleToggle = () => {
     if (theme === "dark") setTheme("light");
@@ -225,6 +233,40 @@ export function AppSidebar({ collapsed, onToggle }: SidebarProps) {
               />
             );
           })}
+        </div>
+
+        {/* AI button */}
+        <div className="px-2 mb-4">
+          <motion.button
+            whileHover={{ backgroundColor: "var(--color-surface-2)" }}
+            whileTap={{ scale: 0.98 }}
+            onClick={toggleAI}
+            className={cn(
+              "flex items-center gap-3 w-full px-2.5 py-2 rounded-lg text-sm transition-colors",
+              collapsed ? "justify-center" : "",
+              "text-[--color-cta] hover:text-[--color-cta-hover]"
+            )}
+          >
+            <span className="flex-shrink-0 w-4 h-4 flex items-center justify-center text-base leading-none">✺</span>
+            {!collapsed && (
+              <motion.span
+                initial={{ opacity: 0, x: -4 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="flex-1 text-left"
+              >
+                AI
+              </motion.span>
+            )}
+            {!collapsed && (
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-[9px] font-bold uppercase tracking-wider text-[--color-text-tertiary] px-1.5 py-0.5 rounded bg-[--color-surface] border border-[--color-border]"
+              >
+                ⌘K
+              </motion.span>
+            )}
+          </motion.button>
         </div>
 
         <AnimatePresence>

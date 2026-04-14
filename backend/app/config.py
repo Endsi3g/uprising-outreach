@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     microsoft_tenant_id: str = "common"
     microsoft_redirect_uri: str = "http://localhost:8000/api/v1/senders/oauth/outlook/callback"
 
+    # Ollama (local AI)
+    ollama_base_url: str = "http://localhost:11434"
+
     # App
     environment: str = "development"
     log_level: str = "INFO"

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { AppSidebar } from "@/components/shared/AppSidebar";
 import { FloatingDock } from "@/components/shared/FloatingDock";
+import { AISidebar } from "@/components/ai/AISidebar";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
@@ -30,6 +31,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* ── Floating Dock ────────────────────────────────────────────────────── */}
       <FloatingDock />
+
+      {/* ── AI Sidebar (global, ⌘K) ──────────────────────────────────────────── */}
+      <AISidebar />
     </div>
   );
 }
