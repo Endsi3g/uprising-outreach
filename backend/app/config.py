@@ -35,6 +35,13 @@ class Settings(BaseSettings):
     # Ollama (local AI)
     ollama_base_url: str = "http://localhost:11434"
 
+    # Facebook / Meta
+    facebook_app_id: str = ""
+    facebook_app_secret: str = ""
+    facebook_webhook_verify_token: str = "uprising-webhook-verify"
+    facebook_redirect_uri: str = "http://localhost:8000/api/v1/senders/oauth/facebook/callback"
+    facebook_graph_version: str = "v19.0"
+
     # App
     environment: str = "development"
     log_level: str = "INFO"
