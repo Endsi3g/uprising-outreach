@@ -3,6 +3,7 @@
 from arq.connections import RedisSettings
 
 from app.config import settings
+from app.workers.facebook_tasks import import_facebook_lead, process_facebook_message
 from app.workers.import_tasks import import_leads_task
 from app.workers.inbox_tasks import sync_gmail_inbox
 
@@ -20,6 +21,8 @@ class WorkerSettings:
     functions = [
         import_leads_task,
         sync_gmail_inbox,
+        process_facebook_message,
+        import_facebook_lead,
     ]
     redis_settings = RedisSettings.from_dsn(settings.redis_url)
     max_jobs = 10

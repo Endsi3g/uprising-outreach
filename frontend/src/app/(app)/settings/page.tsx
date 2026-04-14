@@ -97,6 +97,7 @@ const PROVIDER_META = {
   gmail: { label: "Gmail", icon: "G", color: "#EA4335" },
   outlook: { label: "Outlook", icon: "O", color: "#0078D4" },
   smtp: { label: "SMTP", icon: "S", color: "#6B7280" },
+  facebook: { label: "Facebook Messenger", icon: "f", color: "#1877F2" },
 } as const;
 
 function ConnecteursSettings({ searchParams }: { searchParams: URLSearchParams }) {
@@ -110,7 +111,7 @@ function ConnecteursSettings({ searchParams }: { searchParams: URLSearchParams }
 
   useEffect(() => {
     if (oauthStatus === "connected" && oauthProvider) {
-      const meta = PROVIDER_META[oauthProvider as keyof typeof PROVIDER_META];
+      const meta = PROVIDER_META[oauthProvider as keyof typeof PROVIDER_META] as { label: string } | undefined;
       setToast({ message: `${meta?.label ?? oauthProvider} connecté avec succès.`, ok: true });
     } else if (oauthStatus === "error") {
       setToast({ message: "La connexion a échoué. Veuillez réessayer.", ok: false });
@@ -131,7 +132,7 @@ function ConnecteursSettings({ searchParams }: { searchParams: URLSearchParams }
     return () => clearTimeout(t);
   }, [toast]);
 
-  async function connectProvider(provider: "gmail" | "outlook") {
+  async function connectProvider(provider: "gmail" | "outlook" | "facebook") {
     setConnecting(provider);
     try {
       const { authorization_url } = await apiClient.get<{ authorization_url: string; provider: string }>(
@@ -241,7 +242,7 @@ function ConnecteursSettings({ searchParams }: { searchParams: URLSearchParams }
           Ajouter un compte
         </p>
         <div className="grid grid-cols-2 gap-4">
-          {(["gmail", "outlook"] as const).map((provider) => {
+          {(["gmail", "outlook", "facebook"] as const).map((provider) => {
             const meta = PROVIDER_META[provider];
             const busy = connecting === provider;
             return (

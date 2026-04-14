@@ -48,8 +48,30 @@ Stop-ProcessOnPort 8000
 # Check if Docker is running
 $dockerStatus = (docker info 2>&1) | Out-String
 if ($dockerStatus -match "error during connect" -or $dockerStatus -match "Le fichier(.)*introuvable") {
-    Write-Host "Error: Docker Desktop is not running. Please start Docker and run this script again." -ForegroundColor Red
-    exit
+    Write-Host "Docker Desktop is not running. Attempting to start it..." -ForegroundColor Yellow
+    $dockerPath = "C:\Program Files\Docker\Docker\Docker Desktop.exe"
+    if (Test-Path $dockerPath) {
+        Start-Process $dockerPath
+        Write-Host "Waiting for Docker to initialize (this may take up to 2 minutes)..." -ForegroundColor Gray
+        $timeout = 120
+        while ($timeout -gt 0) {
+            $check = (docker info 2>&1) | Out-String
+            if ($check -notmatch "error during connect" -and $check -notmatch "introuvable") {
+                Write-Host "Docker is now ready!" -ForegroundColor Green
+                break
+            }
+            Write-Host "." -NoNewline -ForegroundColor Gray
+            Start-Sleep -Seconds 5
+            $timeout -= 5
+        }
+        if ($timeout -le 0) {
+            Write-Host "`nError: Docker timed out. Please check Docker Desktop manually." -ForegroundColor Red
+            exit
+        }
+    } else {
+        Write-Host "Error: Docker Desktop is not running and could not be found at $dockerPath." -ForegroundColor Red
+        exit
+    }
 }
 
 if ($InstallDeps) {

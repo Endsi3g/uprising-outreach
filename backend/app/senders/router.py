@@ -12,6 +12,8 @@ from app.senders.models import EmailProvider
 from app.senders.oauth import (
     create_oauth_state,
     decode_oauth_state,
+    facebook_authorization_url,
+    facebook_exchange_code,
     gmail_authorization_url,
     gmail_exchange_code,
     outlook_authorization_url,
@@ -93,7 +95,7 @@ async def delete_sender(
 # ---------------------------------------------------------------------------
 
 _FRONTEND_SETTINGS_URL = "http://localhost:3000/settings?tab=Connecteurs"
-_SUPPORTED_PROVIDERS = {EmailProvider.GMAIL, EmailProvider.OUTLOOK}
+_SUPPORTED_PROVIDERS = {EmailProvider.GMAIL, EmailProvider.OUTLOOK, EmailProvider.FACEBOOK}
 
 
 @router.get("/oauth/{provider}/authorize", response_model=OAuthAuthorizeResponse)
@@ -112,8 +114,10 @@ async def oauth_authorize(
 
     if provider == EmailProvider.GMAIL:
         auth_url = gmail_authorization_url(state)
-    else:
+    elif provider == EmailProvider.OUTLOOK:
         auth_url = outlook_authorization_url(state)
+    else:
+        auth_url = facebook_authorization_url(state)
 
     return OAuthAuthorizeResponse(authorization_url=auth_url, provider=provider)
 
@@ -145,13 +149,34 @@ async def oauth_callback(
     try:
         if provider == EmailProvider.GMAIL:
             token_data = await gmail_exchange_code(code)
+            await service.upsert_oauth_sender(db, workspace_id, provider, token_data)
         elif provider == EmailProvider.OUTLOOK:
             token_data = await outlook_exchange_code(code)
+            await service.upsert_oauth_sender(db, workspace_id, provider, token_data)
+        elif provider == EmailProvider.FACEBOOK:
+            pages = await facebook_exchange_code(code)
+            if not pages:
+                return RedirectResponse(f"{error_redirect}&message=no_pages_found")
+            for page in pages:
+                # Map page fields to the generic token_data schema
+                sender = await service.upsert_oauth_sender(
+                    db,
+                    workspace_id,
+                    provider,
+                    {
+                        "email": page["page_id"],
+                        "access_token": page["access_token"],
+                        "refresh_token": None,
+                        "token_expiry": None,
+                        "scopes": page["scopes"],
+                    },
+                )
+                # Patch display_name to the human-readable page name
+                sender.display_name = page["page_name"]
+                await db.commit()
         else:
             return RedirectResponse(f"{error_redirect}&message=unsupported_provider")
     except Exception:
         return RedirectResponse(f"{error_redirect}&message=token_exchange_failed")
-
-    await service.upsert_oauth_sender(db, workspace_id, provider, token_data)
 
     return RedirectResponse(f"{_FRONTEND_SETTINGS_URL}&status=connected&provider={provider.value}")

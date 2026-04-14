@@ -12,6 +12,7 @@ class EmailProvider(str, enum.Enum):
     GMAIL = "gmail"
     OUTLOOK = "outlook"
     SMTP = "smtp"
+    FACEBOOK = "facebook"
 
 
 class SenderStatus(str, enum.Enum):

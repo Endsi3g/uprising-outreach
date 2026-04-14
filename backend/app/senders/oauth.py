@@ -203,3 +203,74 @@ async def outlook_exchange_code(code: str) -> dict:
         "token_expiry": expiry_iso,
         "scopes": scopes_str,
     }
+
+
+# ---------------------------------------------------------------------------
+# Facebook / Meta
+# ---------------------------------------------------------------------------
+
+_FACEBOOK_SCOPES = [
+    "pages_messaging",
+    "pages_read_engagement",
+    "leads_retrieval",
+    "pages_manage_metadata",
+]
+
+
+def facebook_authorization_url(state: str) -> str:
+    """Build the Facebook OAuth2 consent URL."""
+    from urllib.parse import urlencode
+
+    params = {
+        "client_id": settings.facebook_app_id,
+        "redirect_uri": settings.facebook_redirect_uri,
+        "scope": ",".join(_FACEBOOK_SCOPES),
+        "response_type": "code",
+        "state": state,
+    }
+    base = f"https://www.facebook.com/{settings.facebook_graph_version}/dialog/oauth"
+    return f"{base}?{urlencode(params)}"
+
+
+async def facebook_exchange_code(code: str) -> list[dict]:
+    """Exchange an auth code for a short-lived user token, then fetch page tokens.
+
+    Returns a list of dicts — one per connected Page — each with keys:
+        page_id, page_name, access_token, scopes
+    """
+    graph_base = f"https://graph.facebook.com/{settings.facebook_graph_version}"
+
+    async with httpx.AsyncClient() as client:
+        # 1. Exchange code for short-lived user access token
+        token_resp = await client.get(
+            f"{graph_base}/oauth/access_token",
+            params={
+                "client_id": settings.facebook_app_id,
+                "redirect_uri": settings.facebook_redirect_uri,
+                "client_secret": settings.facebook_app_secret,
+                "code": code,
+            },
+        )
+        token_resp.raise_for_status()
+        user_token: str = token_resp.json()["access_token"]
+
+        # 2. Fetch pages the user manages (includes per-page long-lived tokens)
+        pages_resp = await client.get(
+            f"{graph_base}/me/accounts",
+            params={"access_token": user_token, "fields": "id,name,access_token"},
+        )
+        pages_resp.raise_for_status()
+        pages_data = pages_resp.json().get("data", [])
+
+    result = []
+    scopes_str = ",".join(_FACEBOOK_SCOPES)
+    for page in pages_data:
+        result.append(
+            {
+                "page_id": page["id"],
+                "page_name": page.get("name", ""),
+                "access_token": page["access_token"],
+                "scopes": scopes_str,
+            }
+        )
+    return result
