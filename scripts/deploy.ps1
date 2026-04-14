@@ -33,7 +33,7 @@ Set-Location ".."
 Write-Host "`n[2/3] Synchronisation Git..." -ForegroundColor Cyan
 git add .
 git commit -m "chore(release): v$newVersion - Production Ready Build"
-git push origin main
+git push origin master
 
 # ── 3. Targeted Build ────────────────────────────────────────────────────────
 if ($Target -eq "Desktop") {
