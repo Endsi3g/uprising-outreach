@@ -3,6 +3,10 @@ param (
     [switch]$Docker = $false
 )
 
+# Ensure the script runs from the project root (parent of 'scripts' folder)
+$RootPath = Join-Path $PSScriptRoot ".."
+Set-Location -Path $RootPath
+
 function Stop-ProcessOnPort($port) {
     Write-Host "Checking for existing processes on port $port..." -ForegroundColor Gray
     $connections = Get-NetTCPConnection -LocalPort $port -ErrorAction SilentlyContinue
