@@ -133,6 +133,15 @@ function Spinner({ size = 16 }: { size?: number }) {
     return <LoaderIcon className="animate-spin" style={{ width: size, height: size }} />;
 }
 
+function CommandChip({ icon, label, color }: { icon: React.ReactNode, label: string, color?: string }) {
+    return (
+        <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[--color-surface-2]/40 hover:bg-[--color-surface-2]/60 border border-[--color-border-subtle] text-[12px] font-medium text-[--color-text-secondary] transition-all">
+            {color ? <span className={cn("w-1.5 h-1.5 rounded-full", color)} /> : <span className="opacity-70">{icon}</span>}
+            {label}
+        </button>
+    );
+}
+
 export function AnimatedAIChat() {
     const [value, setValue] = useState("");
     const [attachments, setAttachments] = useState<string[]>([]);
@@ -339,7 +348,7 @@ export function AnimatedAIChat() {
                             className="text-center py-12 flex-shrink-0"
                         >
                             <div className="flex items-center justify-center gap-2.5 mb-2">
-                                <span className="text-[--color-cta] text-2xl">✺</span>
+                                <span className="text-[--color-orange-vibrant] text-2xl">✺</span>
                                 <h1
                                     className="text-4xl font-normal leading-tight"
                                     style={{ fontFamily: "var(--font-serif)", color: "var(--color-text)" }}
@@ -414,20 +423,80 @@ export function AnimatedAIChat() {
                             )}
                         </AnimatePresence>
 
-                        <div className="p-4">
-                            <Textarea
-                                ref={textareaRef}
-                                value={value}
-                                onChange={(e) => { setValue(e.target.value); adjustHeight(); }}
-                                onKeyDown={handleKeyDown}
-                                onFocus={() => setInputFocused(true)}
-                                onBlur={() => setInputFocused(false)}
-                                placeholder="Posez une question à ProspectOS..."
-                                containerClassName="w-full"
-                                className="w-full px-4 py-3 resize-none bg-transparent border-none text-[--color-text] text-sm focus:outline-none placeholder:text-[--color-text-tertiary] min-h-[60px]"
-                                style={{ overflow: "hidden" }}
-                                showRing={false}
-                            />
+                        <div className="p-4 flex flex-col gap-3">
+                            <div className="flex items-center gap-2">
+                                <button type="button" onClick={handleAttachFile} className="flex-shrink-0 p-2 text-[--color-text-tertiary] hover:text-[--color-orange-vibrant] hover:bg-[--color-orange-vibrant]/5 rounded-lg transition-all group">
+                                    <PlusIcon className="w-5 h-5" />
+                                </button>
+                                <Textarea
+                                    ref={textareaRef}
+                                    value={value}
+                                    onChange={(e) => { setValue(e.target.value); adjustHeight(); }}
+                                    onKeyDown={handleKeyDown}
+                                    onFocus={() => setInputFocused(true)}
+                                    onBlur={() => setInputFocused(false)}
+                                    placeholder="Posez une question à ProspectOS..."
+                                    containerClassName="flex-1"
+                                    className="w-full px-0 py-2 resize-none bg-transparent border-none text-[--color-text] text-base focus:outline-none placeholder:text-[--color-text-tertiary] min-h-[40px]"
+                                    style={{ overflow: "hidden" }}
+                                    showRing={false}
+                                />
+                            </div>
+
+                            <div className="flex items-center justify-between mt-1">
+                                <div className="flex items-center gap-2">
+                                    <div className="relative" ref={modelDropdownRef}>
+                                        <button 
+                                            onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
+                                            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-[--color-surface-2]/50 border border-[--color-border-subtle] text-[11px] font-medium text-[--color-text-secondary] hover:bg-[--color-surface-2] transition-colors"
+                                        >
+                                            <span className="w-1.5 h-1.5 rounded-full bg-[--color-orange-vibrant]" />
+                                            {selectedModel}
+                                            <ChevronDown className={cn("w-3 h-3 transition-transform", isModelDropdownOpen && "rotate-180")} />
+                                        </button>
+                                        <AnimatePresence>
+                                            {isModelDropdownOpen && (
+                                                <motion.div 
+                                                    initial={{ opacity: 0, scale: 0.95, y: 5 }}
+                                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                    exit={{ opacity: 0, scale: 0.95, y: 5 }}
+                                                    className="absolute bottom-full left-0 mb-2 w-40 bg-[--color-surface] border border-[--color-border] rounded-xl shadow-xl z-[60] overflow-hidden p-1"
+                                                >
+                                                    {models.map(m => (
+                                                        <button 
+                                                            key={m}
+                                                            onClick={() => { setSelectedModel(m); setIsModelDropdownOpen(false); }}
+                                                            className={cn(
+                                                                "w-full text-left px-3 py-1.5 rounded-lg text-xs transition-colors",
+                                                                selectedModel === m ? "bg-[--color-orange-vibrant] text-white" : "hover:bg-[--color-surface-2] text-[--color-text-secondary]"
+                                                            )}
+                                                        >
+                                                            {m}
+                                                        </button>
+                                                    ))}
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
+                                    <button className="p-1.5 text-[--color-text-tertiary] hover:text-[--color-text] transition-colors">
+                                        <AudioLines className="w-4 h-4" />
+                                    </button>
+                                </div>
+
+                                <motion.button
+                                    type="button"
+                                    onClick={handleSendMessage}
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    disabled={isThinking || isTyping || !value.trim()}
+                                    className={cn(
+                                        "w-8 h-8 rounded-full flex items-center justify-center transition-all",
+                                        value.trim() && !isThinking ? "bg-[--color-text] text-white" : "bg-[--color-surface-2] text-[--color-text-tertiary] opacity-50"
+                                    )}
+                                >
+                                    {isThinking || isTyping ? <Spinner size={14} /> : <ArrowUpIcon className="w-4 h-4" />}
+                                </motion.button>
+                            </div>
                         </div>
 
                         <AnimatePresence>
@@ -445,44 +514,37 @@ export function AnimatedAIChat() {
                             )}
                         </AnimatePresence>
 
-                        <div className="p-4 border-t border-[--color-border] flex items-center justify-between gap-4">
-                            <div className="flex items-center gap-3">
-                                <button type="button" onClick={handleAttachFile} className="p-2 text-[--color-text-tertiary] hover:text-[--color-text] rounded-lg transition-colors group">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
-                                </button>
-                                <button type="button" data-command-button onClick={(e) => { e.stopPropagation(); setShowCommandPalette(prev => !prev); }} className={cn("p-2 text-[--color-text-tertiary] hover:text-[--color-text] rounded-lg transition-colors group", showCommandPalette && "bg-[--color-surface-2] text-[--color-text]")}>
-                                    <Command className="w-4 h-4" />
-                                </button>
-                            </div>
-                            
-                            <motion.button
-                                type="button"
-                                onClick={handleSendMessage}
-                                whileHover={{ scale: 1.01 }}
-                                whileTap={{ scale: 0.98 }}
-                                disabled={isThinking || isTyping || !value.trim()}
-                                className={cn("px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2", value.trim() && !isThinking ? "bg-[--color-cta] text-white shadow-lg" : "bg-[--color-surface-2] text-[--color-text-tertiary] opacity-50")}
-                            >
-                                {isThinking || isTyping ? <Spinner size={16} /> : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>}
-                                <span>Envoyer</span>
-                            </motion.button>
-                        </div>
                     </motion.div>
 
-                    <div className="mt-4 flex flex-col items-center gap-4">
+                    <div className="mt-4 flex flex-col items-center gap-5">
+                        <div className="flex flex-wrap items-center justify-center gap-2">
+                            <CommandChip icon={<Clip className="w-3.5 h-3.5" />} label="Code" />
+                            <CommandChip icon={<Pen className="w-3.5 h-3.5" />} label="Écrire" />
+                            <CommandChip icon={<Zap className="w-3.5 h-3.5" />} label="Stratégiser" />
+                            <CommandChip icon={<Calendar className="w-3.5 h-3.5" />} label="Depuis Calendar" color="bg-[#1a73e8]" />
+                            <CommandChip icon={<Mail className="w-3.5 h-3.5" />} label="Depuis Gmail" color="bg-[#ea4335]" />
+                        </div>
+
                         {messages.length > 0 && (
                             <button onClick={() => { setMessages([]); localStorage.removeItem("prospectos_chat_history"); }} className="text-[10px] font-bold uppercase tracking-widest text-red-500/60 hover:text-red-500 transition-colors">
                                 Recommencer la discussion
                             </button>
                         )}
-                        <div className="flex flex-wrap items-center justify-center gap-2">
-                            {commandSuggestions.map((suggestion, index) => (
-                                <button key={suggestion.prefix} onClick={() => selectCommandSuggestion(index)} className="flex items-center gap-2 px-3 py-2 bg-[--color-surface] hover:bg-[--color-surface-2] border border-[--color-border] rounded-lg text-sm text-[--color-text-secondary] transition-all">
-                                    {suggestion.icon}
-                                    <span>{suggestion.label}</span>
-                                </button>
-                            ))}
-                        </div>
+                        
+                        {messages.length === 0 && (
+                            <div className="flex flex-wrap items-center justify-center gap-3 mt-2">
+                                {commandSuggestions.map((suggestion, index) => (
+                                    <button 
+                                        key={suggestion.prefix} 
+                                        onClick={() => selectCommandSuggestion(index)} 
+                                        className="flex items-center gap-2.5 px-4 py-2.5 bg-white hover:bg-[--color-surface-white] border border-[--color-border] rounded-full text-[13px] font-medium text-[--color-text-secondary] transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5"
+                                    >
+                                        <span className="text-[--color-text-tertiary] opacity-70">{suggestion.icon}</span>
+                                        <span>{suggestion.label}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -495,7 +557,7 @@ export function AnimatedAIChat() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 20 }}
                     >
-                        <div className="w-8 h-7 rounded-sm bg-[--color-cta] flex items-center justify-center">
+                        <div className="w-8 h-7 rounded-sm bg-[--color-orange-vibrant] flex items-center justify-center shadow-[0_0_10px_rgba(255,96,0,0.3)]">
                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-[--color-text-secondary]">
@@ -516,7 +578,7 @@ function TypingDots() {
             {[1, 2, 3].map((dot) => (
                 <motion.div
                     key={dot}
-                    className="w-1.5 h-1.5 bg-[--color-cta] rounded-full mx-0.5"
+                    className="w-1.5 h-1.5 bg-[--color-orange-vibrant] rounded-full mx-0.5"
                     initial={{ opacity: 0.3 }}
                     animate={{ 
                         opacity: [0.3, 0.9, 0.3],
