@@ -66,6 +66,7 @@ async function callProspectOS(input) {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
+                ...(API_TOKEN ? { "Authorization": `Bearer ${API_TOKEN}` } : {})
             },
             body: JSON.stringify({
                 user_input: input
@@ -178,6 +179,7 @@ async function analyzePage() {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
+                ...(API_TOKEN ? { "Authorization": `Bearer ${API_TOKEN}` } : {})
             },
             body: JSON.stringify({
                 url: tab.url
@@ -221,4 +223,11 @@ userInput.addEventListener('keydown', (e) => {
 
 if (analyzeButton) {
     analyzeButton.addEventListener('click', analyzePage);
+}eight) + 'px';
+    }, 0);
+});
+
+if (analyzeButton) {
+    analyzeButton.addEventListener('click', analyzePage);
+}stener('click', analyzePage);
 }
