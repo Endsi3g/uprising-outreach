@@ -40,6 +40,12 @@ async def list_leads(
         base_where.append(Lead.score <= filters.score_max)
     if filters.source:
         base_where.append(Lead.source == filters.source)
+    
+    # Search support (email or notes or extra)
+    # Note: For demo simplicity, searching notes. In prod, use tsvector.
+    if hasattr(filters, "q") and filters.q:
+        search_term = f"%{filters.q}%"
+        base_where.append(Lead.notes.ilike(search_term))
 
     query = select(Lead).where(*base_where).order_by(Lead.created_at.desc(), Lead.id.desc())
 

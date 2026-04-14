@@ -70,4 +70,4 @@ class LeadFilter(BaseModel):
     score_min: int | None = None
     score_max: int | None = None
     source: str | None = None
-    search: str | None = None
+    q: str | None = None

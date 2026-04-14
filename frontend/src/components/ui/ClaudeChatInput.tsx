@@ -145,7 +145,7 @@ const IconButton = ({ children, onClick, disabled, className, title }: any) => (
     onClick={onClick}
     title={title}
     className={cn(
-      "h-9 w-9 p-0 flex items-center justify-center rounded-md text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700 transition-colors disabled:opacity-50 flex-shrink-0 cursor-pointer",
+      "h-9 w-9 p-0 flex items-center justify-center rounded-md text-[--color-text-tertiary] hover:text-[--color-text] hover:bg-[--color-surface-2] transition-colors disabled:opacity-50 flex-shrink-0 cursor-pointer",
       className
     )}
   >
@@ -218,7 +218,7 @@ const TextualFilePreviewCard: React.FC<{
           {getFileExtension(file.file.name)}
         </p>
         <div className="group-hover:opacity-100 opacity-0 transition-opacity duration-300 flex items-center gap-0.5 absolute top-1 right-1 z-20">
-          <button className="h-6 w-6 flex items-center justify-center bg-white rounded-md border border-[--color-border] shadow-sm text-black" onClick={() => onRemove(file.id)}>
+          <button className="h-6 w-6 flex items-center justify-center bg-[--color-surface-white] rounded-md border border-[--color-border] shadow-sm text-[--color-text]" onClick={() => onRemove(file.id)}>
             <X className="h-3 w-3" />
           </button>
         </div>
@@ -243,7 +243,7 @@ const PastedContentCard: React.FC<{
       <div className="group absolute flex justify-start items-end p-2 inset-0 bg-gradient-to-t from-[--color-surface-white] via-[rgba(255,255,255,0.7)] to-transparent overflow-hidden">
         <p className="capitalize text-[--color-text] text-xs bg-[--color-surface-2] border border-[--color-border] px-2 py-1 rounded-md z-10 font-medium">Texte</p>
         <div className="group-hover:opacity-100 opacity-0 transition-opacity duration-300 flex items-center gap-0.5 absolute top-1 right-1 z-20">
-          <button className="h-6 w-6 flex items-center justify-center bg-white rounded-md border border-[--color-border] shadow-sm text-black" onClick={() => onRemove(content.id)}>
+          <button className="h-6 w-6 flex items-center justify-center bg-[--color-surface-white] rounded-md border border-[--color-border] shadow-sm text-[--color-text]" onClick={() => onRemove(content.id)}>
             <X className="h-3 w-3" />
           </button>
         </div>

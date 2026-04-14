@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Modal, Button, Input } from "@/components/ui";
+import { RichTextEditor } from "@/components/ui/RichTextEditor";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -223,11 +224,12 @@ export default function CampaignsPage() {
       <Modal open={!!editingTemplate} onClose={() => setEditingTemplate(null)} title="Éditeur de template">
         <div className="pt-4 pb-2">
           <p className="text-sm text-[--color-text-secondary] mb-4">Édition du template : <strong>{editingTemplate}</strong></p>
-          <div className="h-48 rounded-xl border border-[--color-border] bg-[--color-surface] p-4 text-[--color-text-tertiary] text-sm flex items-center justify-center">
-            [ Éditeur riche en cours d'intégration ]
-          </div>
+          <RichTextEditor 
+            value="<p>Bonjour {{first_name}},</p><p>J'ai remarqué votre entreprise sur Montréal...</p>" 
+            onChange={(val) => console.log('Template Update:', val)} 
+          />
           <div className="flex justify-end mt-4">
-            <Button variant="primary" onClick={() => setEditingTemplate(null)}>Terminer</Button>
+            <Button variant="primary" onClick={() => setEditingTemplate(null)}>Sauvegarder</Button>
           </div>
         </div>
       </Modal>
