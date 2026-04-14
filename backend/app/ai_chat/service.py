@@ -16,9 +16,21 @@ from app.ai_chat.tools.registry import TOOL_DEFINITIONS, execute_tool
 
 _CLAUDE_MODELS = {"claude-sonnet-4-6", "claude-haiku-4-5", "claude-opus-4-6"}
 
+# Map branded frontend model IDs → real Claude model IDs
+_MODEL_ALIASES: dict[str, str] = {
+    "prospectos-ai-core": "claude-sonnet-4-6",
+    "prospectos-ai-fast": "claude-haiku-4-5-20251001",
+}
+
+
+def _resolve_model(model: str) -> str:
+    """Resolve a frontend model alias to the underlying model ID."""
+    return _MODEL_ALIASES.get(model, model)
+
 
 def _is_claude(model: str) -> bool:
-    return model in _CLAUDE_MODELS or model.startswith("claude-")
+    resolved = _resolve_model(model)
+    return resolved in _CLAUDE_MODELS or resolved.startswith("claude-")
 
 
 def _is_ollama(model: str) -> bool:
@@ -117,7 +129,7 @@ async def stream_chat(
         from app.ai_chat.providers.claude import stream_claude
         tools = TOOL_DEFINITIONS if request.tools_enabled else []
         async for chunk in stream_claude(
-            model=request.model,
+            model=_resolve_model(request.model),
             messages=messages,
             tool_definitions=tools,
             page_context=page_ctx,

@@ -22,6 +22,7 @@
   --sidebar-collapsed-width: 52px;
 
   /* Light theme (default) */
+  color-scheme: light;
   --color-bg: #f5f4ed;
   --color-surface: #faf9f5;
   --color-surface-2: #f0eee6;
@@ -45,6 +46,7 @@
 
 /* ── Light theme (explicit — mirrors :root so [data-theme] always wins) ────── */
 [data-theme="light"] {
+  color-scheme: light;
   --color-bg: #f5f4ed;
   --color-surface: #faf9f5;
   --color-surface-2: #f0eee6;
@@ -68,6 +70,7 @@
 
 /* ── Dark theme ──────────────────────────────────────────────────────────── */
 [data-theme="dark"] {
+  color-scheme: dark;
   --color-bg: #141413;
   --color-surface: #1e1e1c;
   --color-surface-2: #2a2a28;

@@ -18,19 +18,13 @@ export function AISidebar() {
     sidebarOpen,
     closeSidebar,
     messages,
-    addUserMessage,
-    appendAssistantChunk,
-    finalizeAssistantMessage,
-    addToolUse,
-    addToolResult,
     clearMessages,
     model,
     setModel,
     isStreaming,
-    setStreaming,
+    sendMessage,
     activeConversationId,
     setActiveConversation,
-    pageContext,
   } = useAIChat();
 
   const [input, setInput] = useState("");
@@ -64,92 +58,11 @@ export function AISidebar() {
     }
   }, [sidebarOpen]);
 
-  async function sendMessage() {
+  async function handleSend() {
     const content = input.trim();
     if (!content || isStreaming) return;
     setInput("");
-    addUserMessage(content);
-    setStreaming(true);
-
-    const token = getToken();
-    const body = JSON.stringify({
-      model,
-      messages: [
-        ...messages
-          .filter((m) => !m.streaming)
-          .map((m) => ({ role: m.role, content: m.content })),
-        { role: "user", content },
-      ],
-      conversation_id: activeConversationId,
-      page_context: pageContext ?? undefined,
-      tools_enabled: true,
-    });
-
-    try {
-      const res = await fetch("/api/v1/ai/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body,
-      });
-
-      if (!res.ok || !res.body) {
-        appendAssistantChunk("Erreur lors de la connexion au serveur AI.");
-        finalizeAssistantMessage();
-        return;
-      }
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const text = decoder.decode(value, { stream: true });
-        const lines = text.split("\n");
-
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          const raw = line.slice(6).trim();
-          if (!raw) continue;
-
-          try {
-            const event = JSON.parse(raw);
-            switch (event.t) {
-              case "meta":
-                if (event.conversation_id) setActiveConversation(event.conversation_id);
-                break;
-              case "text":
-                appendAssistantChunk(event.v ?? "");
-                break;
-              case "tool_use":
-                addToolUse(event as ToolUseEvent);
-                break;
-              case "tool_result":
-                addToolResult(event as ToolResultEvent);
-                break;
-              case "done":
-                finalizeAssistantMessage();
-                break;
-              case "error":
-                appendAssistantChunk(`\n\n⚠️ ${event.message}`);
-                finalizeAssistantMessage();
-                break;
-            }
-          } catch {
-            // malformed SSE chunk — skip
-          }
-        }
-      }
-    } catch (err) {
-      appendAssistantChunk("Impossible de contacter le serveur. Vérifiez que le backend est démarré.");
-      finalizeAssistantMessage();
-    } finally {
-      setStreaming(false);
-    }
+    await sendMessage(content);
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {

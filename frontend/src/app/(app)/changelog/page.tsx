@@ -1,9 +1,40 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Sparkles, Zap, Shield, Rocket, Bug, Terminal } from "lucide-react";
+import { Sparkles, Zap, Shield, Rocket, Bug, Terminal, Cpu, Monitor, Volume2 } from "lucide-react";
 
 const CHANGELOG = [
+  {
+    version: "1.2.0",
+    date: "14 Avril 2026",
+    title: "Agents Autonomes & Voix Dynamic",
+    items: [
+      {
+        type: "feat",
+        label: "Intégration NanoClaw",
+        description: "Connecté au framework NanoClaw pour l'exécution d'agents autonomes dans des containers isolés.",
+        icon: <Cpu className="w-4 h-4 text-amber-400" />
+      },
+      {
+        type: "feat",
+        label: "Sélecteur de Fournisseur AI",
+        description: "Basculez entre Claude (Cloud) et Ollama (Local) directement depuis le chat.",
+        icon: <Zap className="w-4 h-4 text-blue-400" />
+      },
+      {
+        type: "feat",
+        label: "Assistant Vocal Proactif",
+        description: "Discussion bidirectionnelle avec STT réel et feedback vocal lors du lancement d'agents.",
+        icon: <Volume2 className="w-4 h-4 text-purple-400" />
+      },
+      {
+        type: "feat",
+        label: "Mode 'Stay Awake'",
+        description: "L'application empêche désormais la mise en veille du système lorsqu'elle est active (version .exe).",
+        icon: <Monitor className="w-4 h-4 text-emerald-400" />
+      }
+    ]
+  },
   {
     version: "1.1.0",
     date: "14 Avril 2026",
@@ -12,45 +43,20 @@ const CHANGELOG = [
       {
         type: "feat",
         label: "Assistant Vocal (ElevenLabs)",
-        description: "Intégration d'un assistant vocal haute-fidélité via API Route sécurisée.",
+        description: "Intégration initiale via API Route sécurisée.",
         icon: <Zap className="w-4 h-4 text-blue-400" />
       },
       {
         type: "feat",
         label: "Google OAuth (Gmail)",
-        description: "Configuration initiale des identifiants Google Cloud pour l'automatisation Gmail.",
+        description: "Identifiants Google Cloud configurés.",
         icon: <Shield className="w-4 h-4 text-emerald-400" />
       },
       {
         type: "fix",
         label: "Robustesse du Build",
-        description: "Correction de multiples erreurs de typage Sequential et d'imports circulaires dans le frontend.",
+        description: "Correction des erreurs de typage et des imports.",
         icon: <Bug className="w-4 h-4 text-amber-400" />
-      },
-      {
-        type: "improve",
-        label: "Workflow Local (dev.ps1)",
-        description: "Script de démarrage plus robuste avec gestion intelligente des processus système et Docker.",
-        icon: <Terminal className="w-4 h-4 text-zinc-400" />
-      }
-    ]
-  },
-  {
-    version: "1.0.0",
-    date: "10 Avril 2026",
-    title: "Lancement de ProspectOS",
-    items: [
-      {
-        type: "feat",
-        label: "Pipeline de Prospection",
-        description: "Première version stable du pipeline d'analyse et d'enrichissement bilingue (QC/CA).",
-        icon: <Rocket className="w-4 h-4 text-orange-400" />
-      },
-      {
-        type: "feat",
-        label: "Interface Bento",
-        description: "Nouveau système de design Zinc avec navigation fluide et Bento Grid.",
-        icon: <Sparkles className="w-4 h-4 text-purple-400" />
       }
     ]
   }

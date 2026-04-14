@@ -110,6 +110,49 @@ async def delete_lead(
     await db.commit()
 
 
+async def get_stats_summary(
+    db: AsyncSession,
+    workspace_id: uuid.UUID,
+) -> dict:
+    """Return new_leads_today, reply_rate, and day-over-day change_pct."""
+    from datetime import date, timedelta
+
+    today_start = datetime.combine(date.today(), datetime.min.time()).replace(tzinfo=UTC)
+    yesterday_start = today_start - timedelta(days=1)
+
+    today_count_result = await db.execute(
+        select(func.count()).select_from(Lead).where(
+            Lead.workspace_id == workspace_id,
+            Lead.deleted_at.is_(None),
+            Lead.created_at >= today_start,
+        )
+    )
+    today_count: int = today_count_result.scalar_one()
+
+    yesterday_count_result = await db.execute(
+        select(func.count()).select_from(Lead).where(
+            Lead.workspace_id == workspace_id,
+            Lead.deleted_at.is_(None),
+            Lead.created_at >= yesterday_start,
+            Lead.created_at < today_start,
+        )
+    )
+    yesterday_count: int = yesterday_count_result.scalar_one()
+
+    if yesterday_count > 0:
+        change_pct = round((today_count - yesterday_count) / yesterday_count * 100, 1)
+    elif today_count > 0:
+        change_pct = 100.0
+    else:
+        change_pct = 0.0
+
+    return {
+        "new_leads_today": today_count,
+        "reply_rate": 0.0,
+        "change_pct": change_pct,
+    }
+
+
 async def bulk_action(
     db: AsyncSession,
     workspace_id: uuid.UUID,

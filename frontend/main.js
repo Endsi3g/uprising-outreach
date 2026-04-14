@@ -1,6 +1,8 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, powerSaveBlocker } = require('electron');
 const path = require('path');
 const isDev = process.env.NODE_ENV === 'development';
+
+let stayAwakeId = null;
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -26,6 +28,9 @@ function createWindow() {
 
 app.whenReady().then(() => {
   createWindow();
+
+  // Prevent system sleep while the app is active
+  stayAwakeId = powerSaveBlocker.start('prevent-app-suspension');
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

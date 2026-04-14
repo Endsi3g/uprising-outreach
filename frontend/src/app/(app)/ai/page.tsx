@@ -255,7 +255,7 @@ export default function AIPage() {
                 onClick={() => setActiveTab("chat")}
                 className={cn(
                   "px-4 py-1.5 rounded-lg text-xs font-semibold transition-all",
-                  activeTab === "chat" ? "bg-white text-[--color-text] shadow-sm" : "text-[--color-text-tertiary] hover:text-[--color-text]"
+                  activeTab === "chat" ? "bg-[--color-bg] text-[--color-text] shadow-sm" : "text-[--color-text-tertiary] hover:text-[--color-text]"
                 )}
               >
                 Chat
@@ -264,7 +264,7 @@ export default function AIPage() {
                 onClick={() => setActiveTab("voice")}
                 className={cn(
                   "px-4 py-1.5 rounded-lg text-xs font-semibold transition-all",
-                  activeTab === "voice" ? "bg-white text-[--color-text] shadow-sm" : "text-[--color-text-tertiary] hover:text-[--color-text]"
+                  activeTab === "voice" ? "bg-[--color-bg] text-[--color-text] shadow-sm" : "text-[--color-text-tertiary] hover:text-[--color-text]"
                 )}
               >
                 Vocal
@@ -278,7 +278,7 @@ export default function AIPage() {
                 onClick={() => setIsThinking(!isThinking)}
                 className={cn(
                   "relative w-10 h-5 rounded-full transition-all duration-300",
-                  isThinking ? "bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.5)]" : "bg-zinc-200"
+                  isThinking ? "bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.5)]" : "bg-[--color-border]"
                 )}
               >
                 <div className={cn(

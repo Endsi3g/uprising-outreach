@@ -20,7 +20,11 @@ export function ModelSelector({ model, onChange }: Props) {
         onClick={() => setOpen((o) => !o)}
         className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-[--color-border] bg-[--color-surface] text-[--color-text-secondary] hover:text-[--color-text] hover:border-[--color-border-warm] transition-all"
       >
-        <span className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0", current.id.startsWith("ollama") ? "bg-emerald-500" : "bg-[--color-cta]")} />
+        <span className={cn(
+          "w-1.5 h-1.5 rounded-full flex-shrink-0",
+          current.id.startsWith("ollama") ? "bg-emerald-500" : 
+          current.id.startsWith("claude") ? "bg-amber-400" : "bg-[--color-cta]"
+        )} />
         {current.label}
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="ml-0.5">
           <polyline points="6 9 12 15 18 9" />
@@ -48,7 +52,11 @@ export function ModelSelector({ model, onChange }: Props) {
                   )}
                 >
                   <div className="flex items-center gap-2">
-                    <span className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0", m.id.startsWith("ollama") ? "bg-emerald-500" : "bg-[--color-cta]")} />
+                    <span className={cn(
+                      "w-1.5 h-1.5 rounded-full flex-shrink-0",
+                      m.id.startsWith("ollama") ? "bg-emerald-500" : 
+                      m.id.startsWith("claude") ? "bg-amber-400" : "bg-[--color-cta]"
+                    )} />
                     <span className="font-medium text-[--color-text]">{m.label}</span>
                   </div>
                   {m.badge && (

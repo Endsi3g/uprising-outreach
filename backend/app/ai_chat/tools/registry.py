@@ -120,7 +120,7 @@ async def execute_tool(
         return await _score_leads(tool_input, workspace_id, db)
     elif name == "enrich_leads":
         return await _enrich_leads(tool_input, workspace_id, db)
-    elif name == "run_nanoclaw_agent":
+    elif name == "perform_autonomous_action":
         return await _run_nanoclaw_agent(tool_input)
     else:
         return {"error": f"Unknown tool: {name}"}
@@ -234,4 +234,4 @@ async def _run_nanoclaw_agent(params: dict) -> dict:
     from app.ai_chat.nanoclaw_bridge import nanoclaw_bridge
     prompt = params.get("prompt", "")
     group_id = params.get("group_id", "default")
-    return nanoclaw_bridge.run_agent(prompt, group_id)
+    return await nanoclaw_bridge.run_agent(prompt, group_id)

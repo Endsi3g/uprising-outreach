@@ -13,6 +13,7 @@ export default function CustomizePage() {
   const [activeTab, setActiveTab] = useState<CustomizeTab>("skills");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isAuthoring, setIsAuthoring] = useState(false);
+  const [showLanding, setShowLanding] = useState(true);
 
   const selectedSkill = skills.data?.find(s => s.id === selectedId);
   const selectedConnector = connectors.data?.find(c => c.id === selectedId);
@@ -36,8 +37,8 @@ export default function CustomizePage() {
       </p>
 
       <div className="space-y-4 w-full max-w-md">
-        <button 
-          onClick={() => setActiveTab("connectors")}
+        <button
+          onClick={() => { setActiveTab("connectors"); setShowLanding(false); }}
           className="w-full group p-5 rounded-2xl bg-[--color-surface] border border-[--color-border] hover:border-[--color-border-warm] transition-all flex items-center gap-4 text-left"
         >
           <div className="w-10 h-10 rounded-lg bg-[--color-surface-2] flex items-center justify-center text-xl">🔗</div>
@@ -47,7 +48,7 @@ export default function CustomizePage() {
           </div>
         </button>
         <button 
-          onClick={() => { setActiveTab("skills"); setIsAuthoring(true); }}
+          onClick={() => { setActiveTab("skills"); setIsAuthoring(true); setShowLanding(false); }}
           className="w-full group p-5 rounded-2xl bg-[--color-surface] border border-[--color-border] hover:border-[--color-border-warm] transition-all flex items-center gap-4 text-left"
         >
           <div className="w-10 h-10 rounded-lg bg-[--color-surface-2] flex items-center justify-center text-xl">🛠️</div>
@@ -66,14 +67,14 @@ export default function CustomizePage() {
       <aside className="w-[200px] border-r border-[--color-border] px-3 py-6 flex flex-col gap-1">
         <button 
           className="flex items-center gap-2 px-3 py-2 text-sm text-[--color-text-secondary] hover:text-[--color-text] mb-4"
-          onClick={() => setSelectedId(null)}
+          onClick={() => { setSelectedId(null); setIsAuthoring(false); setShowLanding(true); }}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
           Personnaliser
         </button>
         
         <button
-          onClick={() => { setActiveTab("skills"); setSelectedId(null); }}
+          onClick={() => { setActiveTab("skills"); setSelectedId(null); setShowLanding(false); }}
           className={cn(
             "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all",
             activeTab === "skills" ? "bg-[--color-surface-2] text-[--color-text] font-medium" : "text-[--color-text-secondary] hover:bg-[--color-surface]"
@@ -83,7 +84,7 @@ export default function CustomizePage() {
           Compétences
         </button>
         <button
-          onClick={() => { setActiveTab("connectors"); setSelectedId(null); }}
+          onClick={() => { setActiveTab("connectors"); setSelectedId(null); setShowLanding(false); }}
           className={cn(
             "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all",
             activeTab === "connectors" ? "bg-[--color-surface-2] text-[--color-text] font-medium" : "text-[--color-text-secondary] hover:bg-[--color-surface]"
@@ -95,7 +96,7 @@ export default function CustomizePage() {
       </aside>
 
       {/* ── List Layout ───────────────────────────────────────── */}
-      {!selectedId && !isAuthoring ? renderLanding() : (
+      {showLanding ? renderLanding() : (
         <div className="flex-1 flex overflow-hidden">
           <div className="w-[300px] border-r border-[--color-border] flex flex-col bg-[--color-surface]">
             <div className="p-4 border-b border-[--color-border] flex items-center justify-between">

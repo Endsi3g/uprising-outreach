@@ -55,6 +55,14 @@ async def create_lead(
     return LeadResponse.model_validate(lead)
 
 
+@router.get("/stats/summary")
+async def get_stats_summary(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    return await service.get_stats_summary(db, current_user.workspace_id)
+
+
 @router.get("/{lead_id}", response_model=LeadResponse)
 async def get_lead(
     lead_id: uuid.UUID,
