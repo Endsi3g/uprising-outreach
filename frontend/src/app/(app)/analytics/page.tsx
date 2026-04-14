@@ -69,24 +69,61 @@ const SENTIMENT_STYLES: Record<string, { bg: string; text: string; label: string
   auto: { bg: "var(--color-surface-2)", text: "var(--color-text-tertiary)", label: "auto" },
 };
 
+interface LeadStats {
+  total_leads: int;
+  qualified_leads: int;
+  sent_emails: int;
+  replied_leads: int;
+  status_counts: Record<string, int>;
+  source_stats: Array<{
+    name: string;
+    sent: int;
+    replies: int;
+    positives: int;
+    status: string;
+  }>;
+  recent_replies: Array<{
+    id: string;
+    contact_id?: string;
+    source?: string;
+    notes?: string;
+    updated_at: string;
+    # Add other fields as needed for the UI mapping
+  }>;
+}
+
 export default function AnalyticsPage() {
-  /* Live data attempts — gracefully falls back to mock */
-  const { data: leadsData } = useQuery<{ pagination: { total_count: number } }>({
-    queryKey: ["analytics-leads-count"],
-    queryFn: () => apiClient.get("/leads?limit=1"),
-    staleTime: 60_000,
-    retry: false,
+  const { data: stats, isLoading } = useQuery<any>({
+    queryKey: ["leads-stats"],
+    queryFn: () => apiClient.get("/leads/stats"),
+    staleTime: 30_000,
   });
 
   const { data: sendersData } = useQuery<any[]>({
     queryKey: ["senders"],
     queryFn: () => apiClient.get("/senders"),
     staleTime: 60_000,
-    retry: false,
   });
 
-  const totalLeads = leadsData?.pagination?.total_count ?? 6;
-  const activeSenders = sendersData?.filter((s: any) => s.status === "active").length ?? 1;
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Spinner size={32} />
+      </div>
+    );
+  }
+
+  const s = stats || {};
+  const totalLeads = s.total_leads ?? 0;
+  const qualifiedLeads = s.qualified_leads ?? 0;
+  const activeSenders = sendersData?.filter((s: any) => s.status === "active").length ?? 0;
+  const pausedSenders = sendersData?.filter((s: any) => s.status === "paused").length ?? 0;
+  const sentEmails = s.sent_emails ?? 0;
+  const repliedLeads = s.replied_leads ?? 0;
+  
+  const replyRate = sentEmails > 0 ? Math.round((repliedLeads / sentEmails) * 100) : 0;
+  // Positive rate: leads with high scores / replies (proxy)
+  const positiveRate = repliedLeads > 0 ? Math.round((qualifiedLeads / repliedLeads) * 100) : 0;
 
   const now = new Date();
   const dateStr = now.toLocaleDateString("fr-CA", {
@@ -97,11 +134,20 @@ export default function AnalyticsPage() {
   });
 
   const kpis = [
-    { label: "Leads total", value: String(totalLeads), sub: "4 qualifiés" },
-    { label: "Campagnes actives", value: String(activeSenders), sub: "1 en pause" },
-    { label: "Emails envoyés", value: "185", sub: "ce mois" },
-    { label: "Reply rate", value: "9%", sub: "17 réponses" },
-    { label: "Positive rate", value: "35%", sub: "6 positives" },
+    { label: "Leads total", value: String(totalLeads), sub: `${qualifiedLeads} qualifiés` },
+    { label: "Campagnes actives", value: String(activeSenders), sub: `${pausedSenders} en pause` },
+    { label: "Emails envoyés", value: String(sentEmails), sub: "Total" },
+    { label: "Reply rate", value: `${replyRate}%`, sub: `${repliedLeads} réponses` },
+    { label: "Positive rate", value: `${positiveRate}%`, sub: `${qualifiedLeads} positives` },
+  ];
+
+  // Pipeline stages mapping
+  const statusCounts = s.status_counts || {};
+  const pipeline = [
+    { stage: "Interested", items: statusCounts.raw || 0 },
+    { stage: "Qualified", items: statusCounts.scored || 0 },
+    { stage: "In Sequence", items: statusCounts.in_sequence || 0 },
+    { stage: "Replied", items: statusCounts.replied || 0 },
   ];
 
   return (
@@ -154,10 +200,10 @@ export default function AnalyticsPage() {
             className="text-base font-medium mb-4"
             style={{ fontFamily: "var(--font-serif)", color: "var(--color-text)" }}
           >
-            Campagnes actives
+            Canaux de prospection
           </h2>
           <div className="space-y-3">
-            {MOCK_CAMPAIGNS.map((c) => (
+            {s.source_stats?.length > 0 ? s.source_stats.map((c: any) => (
               <div
                 key={c.name}
                 className="px-4 py-3.5 rounded-xl card-hover"
@@ -171,8 +217,8 @@ export default function AnalyticsPage() {
                   <span
                     className="text-xs px-2 py-0.5 rounded-full font-medium"
                     style={{
-                      background: c.status === "active" ? "rgba(22,101,52,0.25)" : "rgba(146,64,14,0.25)",
-                      color: c.status === "active" ? "#4ade80" : "#fbbf24",
+                      background: "rgba(22,101,52,0.25)",
+                      color: "#4ade80",
                     }}
                   >
                     {c.status}
@@ -184,7 +230,11 @@ export default function AnalyticsPage() {
                   <span><strong className="text-sm tabular-nums" style={{ color: "#4ade80" }}>{c.positives}</strong> positives</span>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="text-xs p-8 text-center border rounded-xl border-dashed" style={{ color: "var(--color-text-tertiary)" }}>
+                Aucune donnée de campagne disponible.
+              </div>
+            )}
           </div>
         </div>
 
@@ -197,42 +247,43 @@ export default function AnalyticsPage() {
             Inbox récente
           </h2>
           <div className="space-y-1">
-            {MOCK_INBOX.map((msg) => {
-              const s = SENTIMENT_STYLES[msg.sentiment];
+            {s.recent_replies?.length > 0 ? s.recent_replies.map((msg: any) => {
+              const initials = msg.notes?.split(' ').map((n: string) => n[0]).join('').slice(0,2) || "??";
+              const time = new Date(msg.updated_at).toLocaleTimeString("fr-CA", { hour: '2-digit', minute: '2-digit' });
               return (
                 <div
-                  key={msg.name}
+                  key={msg.id}
                   className="flex items-start gap-3 px-4 py-3 rounded-xl interactive cursor-pointer"
                   style={{ background: "transparent" }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "var(--color-bg)"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
                 >
-                  {/* Avatar */}
                   <div
                     className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0"
                     style={{ background: "var(--color-surface-2)", color: "var(--color-text)" }}
                   >
-                    {msg.initials}
+                    {initials}
                   </div>
-                  {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-sm font-medium truncate" style={{ color: "var(--color-text)" }}>{msg.name}</p>
+                      <p className="text-sm font-medium truncate" style={{ color: "var(--color-text)" }}>Lead #{msg.id.slice(0,5)}</p>
                       <div className="flex items-center gap-2 flex-shrink-0">
-                        <span className="text-xs tabular-nums" style={{ color: "var(--color-text-tertiary)" }}>{msg.time}</span>
+                        <span className="text-xs tabular-nums" style={{ color: "var(--color-text-tertiary)" }}>{time}</span>
                         <span
                           className="text-xs px-1.5 py-0.5 rounded font-medium"
-                          style={{ background: s.bg, color: s.text }}
+                          style={{ background: "rgba(22,101,52,0.25)", color: "#4ade80" }}
                         >
-                          {s.label}
+                          replied
                         </span>
                       </div>
                     </div>
-                    <p className="text-xs mt-0.5 truncate" style={{ color: "var(--color-text-secondary)" }}>{msg.preview}</p>
+                    <p className="text-xs mt-0.5 truncate" style={{ color: "var(--color-text-secondary)" }}>{msg.source || "Pas de source"}</p>
                   </div>
                 </div>
               );
-            })}
+            }) : (
+              <div className="text-xs p-8 text-center border rounded-xl border-dashed" style={{ color: "var(--color-text-tertiary)" }}>
+                Aucune réponse récente.
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -246,39 +297,24 @@ export default function AnalyticsPage() {
           Pipeline — opportunités actives
         </h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {MOCK_PIPELINE.map((col) => (
+          {pipeline.map((col) => (
             <div key={col.stage}>
-              {/* Stage header */}
               <div className="flex items-center gap-2 mb-2 px-1">
-                <span
-                  className="text-xs font-medium"
-                  style={{ color: "var(--color-text-secondary)" }}
-                >
-                  {col.stage}
-                </span>
-                <span
-                  className="text-xs px-1.5 py-0.5 rounded-full"
-                  style={{ background: "var(--color-surface-2)", color: "var(--color-text-tertiary)" }}
-                >
-                  {col.items.length}
-                </span>
+                <span className="text-xs font-medium" style={{ color: "var(--color-text-secondary)" }}>{col.stage}</span>
+                <span className="text-xs px-1.5 py-0.5 rounded-full" style={{ background: "var(--color-surface-2)", color: "var(--color-text-tertiary)" }}>{col.items}</span>
               </div>
-              {/* Cards */}
-              {col.items.map((item) => (
-                <div
-                  key={item.name}
-                  className="px-3.5 py-3 rounded-xl card-hover cursor-pointer"
-                  style={{
-                    background: "var(--color-bg)",
-                    border: "1px solid var(--color-border)",
-                  }}
-                >
-                  <p className="text-sm font-medium mb-0.5" style={{ color: "var(--color-text)" }}>{item.name}</p>
-                  <p className="text-sm font-medium tabular-nums" style={{ color: "var(--color-cta)" }}>
-                    ${item.value.toLocaleString()}
-                  </p>
-                </div>
-              ))}
+              <div
+                className="px-3.5 py-3 rounded-xl card-hover cursor-pointer opacity-50"
+                style={{
+                  background: "var(--color-bg)",
+                  border: "1px solid var(--color-border)",
+                }}
+              >
+                <p className="text-[10px] uppercase font-bold" style={{ color: "var(--color-text-tertiary)" }}>Valeur estimée</p>
+                <p className="text-lg font-medium tabular-nums" style={{ color: "var(--color-text)" }}>
+                  ${(col.items * 250).toLocaleString()}
+                </p>
+              </div>
             </div>
           ))}
         </div>

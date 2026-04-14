@@ -13,7 +13,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <AppSidebar collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} />
 
       {/* ── Main region ──────────────────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+      <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
         <div
           className="flex-1 overflow-auto m-2 rounded-2xl relative"
           style={{
@@ -26,10 +26,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             {children}
           </div>
         </div>
-      </div>
 
-      {/* ── Floating Dock ────────────────────────────────────────────────────── */}
-      <FloatingDock />
+        {/* ── Floating Dock ────────────────────────────────────────────────────── */}
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-40">
+          <FloatingDock />
+        </div>
+      </div>
     </div>
   );
 }

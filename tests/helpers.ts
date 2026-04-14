@@ -10,7 +10,7 @@ export async function injectAuthToken(page: Page) {
 
 /** Mock la route API leads avec une liste de leads de test */
 export async function mockLeadsAPI(page: Page) {
-  await page.route("**/api/leads**", (route) =>
+  await page.route("**/api/v1/leads**", (route) =>
     route.fulfill({
       status: 200,
       contentType: "application/json",

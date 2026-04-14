@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: ["class", '[data-theme="dark"]'],
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
   theme: {
     extend: {
@@ -11,8 +12,8 @@ const config: Config = {
           light: "#d97757",
         },
         // ── Backgrounds ─────────────────────────────────────────────────────
-        parchment: "#141413",
-        ivory: "#30302e",
+        parchment: "#f5f4ed",
+        ivory: "#faf9f5",
         // ── Text ────────────────────────────────────────────────────────────
         "near-black": "#141413",
         "warm-gray": {

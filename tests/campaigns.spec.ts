@@ -5,6 +5,7 @@ test.describe("Page Campaigns (Séquence Builder)", () => {
   test.beforeEach(async ({ page }) => {
     await injectAuthToken(page);
     await page.goto("/campaigns");
+    await page.waitForLoadState("networkidle");
   });
 
   test("affiche le nom de la campagne", async ({ page }) => {
@@ -21,9 +22,10 @@ test.describe("Page Campaigns (Séquence Builder)", () => {
   });
 
   test("affiche les 3 étapes initiales de la séquence", async ({ page }) => {
-    await expect(page.getByText("Premier contact")).toBeVisible();
-    await expect(page.getByText("Pause")).toBeVisible();
-    await expect(page.getByText("Suivi de valeur")).toBeVisible();
+    // Les titres d'étapes sont des <input> contrôlés — utiliser getByDisplayValue
+    await expect(page.getByDisplayValue("Premier contact")).toBeVisible();
+    await expect(page.getByDisplayValue("Pause")).toBeVisible();
+    await expect(page.getByDisplayValue("Suivi de valeur")).toBeVisible();
   });
 
   test("affiche l'indicateur de début de séquence", async ({ page }) => {
@@ -36,33 +38,29 @@ test.describe("Page Campaigns (Séquence Builder)", () => {
   });
 
   test("ajoute une étape Email en cliquant + Email", async ({ page }) => {
-    const addEmail = page.getByRole("button", { name: /\+ Email/ });
-    await addEmail.click();
-
-    // Une nouvelle étape "Nouvel Email" doit apparaître
-    await expect(page.getByText("Nouvel Email")).toBeVisible({ timeout: 2000 });
+    await page.getByRole("button", { name: /\+ Email/ }).click();
+    // Le titre de la nouvelle étape est un <input> avec value "Nouvel Email"
+    await expect(page.getByDisplayValue("Nouvel Email")).toBeVisible({ timeout: 3000 });
   });
 
   test("ajoute une étape Attente en cliquant + Attente", async ({ page }) => {
-    const addWait = page.getByRole("button", { name: /\+ Attente/ });
-    await addWait.click();
-
-    await expect(page.getByText("Nouvelle Attente")).toBeVisible({ timeout: 2000 });
+    await page.getByRole("button", { name: /\+ Attente/ }).click();
+    await expect(page.getByDisplayValue("Nouvelle Attente")).toBeVisible({ timeout: 3000 });
   });
 
   test("le nom de campagne est éditable par clic", async ({ page }) => {
-    const title = page.getByText("SaaS Outreach Q2");
-    await title.click();
+    // Cliquer sur le h1 du nom de campagne
+    await page.getByText("SaaS Outreach Q2").click();
 
-    // Un input doit apparaître
-    const input = page.locator("input[value='SaaS Outreach Q2']");
-    await expect(input).toBeVisible();
+    // Un input avec la valeur actuelle doit apparaître
+    const input = page.getByDisplayValue("SaaS Outreach Q2");
+    await expect(input).toBeVisible({ timeout: 2000 });
 
-    // On modifie le nom
-    await input.fill("Test Campaign");
+    // Modifier le nom
+    await input.fill("Test Campaign Uprising");
     await input.press("Enter");
 
-    await expect(page.getByText("Test Campaign")).toBeVisible();
+    await expect(page.getByText("Test Campaign Uprising")).toBeVisible();
   });
 
   test("affiche les templates sur les étapes email", async ({ page }) => {

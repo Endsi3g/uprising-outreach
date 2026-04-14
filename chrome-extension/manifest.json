@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "ProspectOS — Uprising Outreach",
+  "version": "1.0",
+  "description": "L'intelligence commerciale Uprising, directement dans votre navigateur.",
+  "permissions": ["sidePanel", "storage", "tabs", "activeTab", "scripting"],
+  "host_permissions": ["<all_urls>"],
+  "action": {
+    "default_title": "Ouvrir ProspectOS"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}

@@ -15,11 +15,21 @@ from app.leads.schemas import (
     LeadCreate,
     LeadFilter,
     LeadResponse,
+    LeadStatsResponse,
     LeadUpdate,
 )
 from app.shared.pagination import Page
 
 router = APIRouter(prefix="/leads", tags=["leads"])
+
+
+@router.get("/stats", response_model=LeadStatsResponse)
+async def get_stats(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> LeadStatsResponse:
+    stats = await service.get_lead_stats(db, current_user.workspace_id)
+    return LeadStatsResponse.model_validate(stats)
 
 
 @router.get("", response_model=Page[LeadResponse])

@@ -64,10 +64,19 @@ class CSVImportResponse(BaseModel):
     message: str
 
 
-class LeadFilter(BaseModel):
-    status: list[LeadStatus] | None = None
-    owner_id: uuid.UUID | None = None
-    score_min: int | None = None
-    score_max: int | None = None
-    source: str | None = None
-    search: str | None = None
+class SourceStat(BaseModel):
+    name: str
+    sent: int
+    replies: int
+    positives: int
+    status: str = "active"
+
+
+class LeadStatsResponse(BaseModel):
+    total_leads: int
+    qualified_leads: int
+    sent_emails: int
+    replied_leads: int
+    status_counts: dict[str, int]
+    source_stats: list[SourceStat]
+    recent_replies: list[LeadResponse]

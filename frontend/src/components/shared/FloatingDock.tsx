@@ -73,7 +73,7 @@ export function FloatingDock() {
   })?.key ?? "chat";
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
+    <div>
       <motion.div
         layout
         className="flex items-center gap-1 px-1.5 py-1.5 rounded-2xl"

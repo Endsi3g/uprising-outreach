@@ -21,6 +21,7 @@
   "homepage": "https://github.com/Endsi3g/uprising-outreach#readme",
   "devDependencies": {
     "@playwright/test": "^1.59.1",
+    "@tauri-apps/cli": "^2.10.1",
     "@types/node": "^25.6.0"
   }
 }
