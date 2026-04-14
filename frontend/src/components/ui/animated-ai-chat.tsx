@@ -595,3 +595,18 @@ function TypingDots() {
         </div>
     );
 }
+
+function CommandChip({ icon, label, color }: { icon: React.ReactNode, label: string, color?: string }) {
+    return (
+        <div 
+            className={cn(
+                "flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-medium border border-[--color-border-subtle] text-[--color-text-secondary]",
+                color ? "bg-opacity-10 " + color.replace("bg-", "text-") : "bg-[--color-surface-2]/30"
+            )}
+            style={{ backgroundColor: color ? 'transparent' : undefined }}
+        >
+            <span className={cn(color ? color.replace("bg-", "text-") : "text-[--color-text-tertiary]")}>{icon}</span>
+            <span>{label}</span>
+        </div>
+    );
+}
