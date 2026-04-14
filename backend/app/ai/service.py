@@ -43,8 +43,24 @@ async def score_lead_with_ai(lead_data: dict) -> Optional[ScoringResult]:
     If no API key is present, returns a fallback mock score.
     """
     if not settings.anthropic_api_key:
-        logger.warning("ANTHROPIC_API_KEY not set. Returning mock scoring result.")
-        # Mock logic for local ecosystem testing
+        logger.warning("ANTHROPIC_API_KEY not set. Using Ollama fallback for scoring.")
+        from app.ai.ollama_client import call_ollama
+        res = await call_ollama(
+            model="llama3.1",
+            system=SCORING_PROMPT.format(lead_json=json.dumps(lead_data, indent=2)),
+            messages=[],
+            temperature=0
+        )
+        text = res["content"][0]["text"]
+        start = text.find("{")
+        end = text.rfind("}") + 1
+        if start != -1 and end != -1:
+            try:
+                return json.loads(text[start:end])
+            except Exception:
+                pass
+
+        # Mock fallback if Ollama fails
         score = 45 + (len(str(lead_data.get("email"))) % 50)
         temp = "hot" if score > 80 else "warm" if score > 50 else "cold"
         return {
@@ -77,5 +93,20 @@ async def score_lead_with_ai(lead_data: dict) -> Optional[ScoringResult]:
         return None
         
     except Exception as e:
-        logger.error(f"Error calling Anthropic API for lead scoring: {str(e)}")
+        logger.error(f"Error calling Anthropic API for lead scoring: {str(e)}. Falling back to Ollama.")
+        from app.ai.ollama_client import call_ollama
+        res = await call_ollama(
+            model="llama3.1",
+            system=SCORING_PROMPT.format(lead_json=json.dumps(lead_data, indent=2)),
+            messages=[],
+            temperature=0
+        )
+        text = res["content"][0].get("text", "")
+        start = text.find("{")
+        end = text.rfind("}") + 1
+        if start != -1 and end != -1:
+            try:
+                return json.loads(text[start:end])
+            except Exception:
+                pass
         return None

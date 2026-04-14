@@ -60,3 +60,42 @@ async def run_capture_task(workspace_id: str, lead_id: str, url: str):
     # Ici on appellerait le service pour mettre à jour le lead en DB après capture
     logger.info(f"Lancement de la tâche de capture pour {url}")
     # ... logique de mise à jour DB ...
+
+async def scrape_page_content(url: str) -> str:
+    """
+    Extrait le texte brut d'une page en supprimant la navigation, les scripts, etc.
+    """
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True)
+        context = await browser.new_context(
+            viewport={'width': 1280, 'height': 800},
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
+        )
+        page = await context.new_page()
+        
+        try:
+            logger.info(f"Scraping texte via Playwright: {url}")
+            await page.goto(url, wait_until="domcontentloaded", timeout=20000)
+            
+            # Attendre un peu que le JS s'exécute si nécessaire
+            await page.wait_for_timeout(2000)
+            
+            # Supprimer les éléments parasites
+            await page.evaluate('''() => {
+                const elementsToRemove = document.querySelectorAll('nav, footer, script, style, noscript, iframe, header, svg, img');
+                elementsToRemove.forEach(el => el.remove());
+            }''')
+            
+            text = await page.inner_text("body")
+            await browser.close()
+            
+            # Nettoyer les espaces multiples
+            import re
+            clean_text = re.sub(r'\n\s*\n', '\n', text).strip()
+            return clean_text[:4000]  # Limiter à 4000 caractères
+            
+        except Exception as e:
+            logger.error(f"Erreur scraping Playwright sur {url}: {e}")
+            await browser.close()
+            return f"Erreur lors de la capture de la page avec Playwright: {str(e)}"
+
