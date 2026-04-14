@@ -282,12 +282,178 @@ async def get_lead_stats(db: AsyncSession, workspace_id: uuid.UUID) -> dict:
     )
     recent_replies = recent_replies_result.scalars().all()
     
-    return {
-        "total_leads": total_leads,
-        "qualified_leads": qualified_leads,
-        "sent_emails": sent_emails,
-        "replied_leads": replied_leads,
-        "status_counts": status_counts,
-        "source_stats": source_stats,
-        "recent_replies": recent_replies
-    }
+
+async def create_email_draft(
+    db: AsyncSession, 
+    workspace_id: uuid.UUID, 
+    lead_id: uuid.UUID | None, 
+    subject: str, 
+    content: str
+) -> any:
+    from app.leads.models_drafts import EmailDraft
+    draft = EmailDraft(
+        workspace_id=workspace_id,
+        lead_id=lead_id,
+        subject=subject,
+        content=content,
+        status="pending"
+    )
+    db.add(draft)
+    await db.commit()
+    await db.refresh(draft)
+    return draft
+
+async def trigger_linkedin_enrichment(
+    workspace_id: uuid.UUID, 
+    url: str,
+    redis=None
+) -> str:
+    from arq import create_pool
+    from arq.connections import RedisSettings
+    from app.config import settings
+    
+    job_id = str(uuid.uuid4())
+    pool = await create_pool(RedisSettings.from_dsn(settings.redis_url))
+    await pool.enqueue_job(
+        "capture_linkedin_lead_task",
+        workspace_id=str(workspace_id),
+        url=url,
+        job_id=job_id
+    )
+    await pool.aclose()
+    return job_id
+
+
+async def import_leads_from_apify(
+    db: AsyncSession,
+    workspace_id: uuid.UUID,
+    dataset_id: str,
+    token: str | None = None
+) -> int:
+    import httpx
+    
+    # Dataset ID can be a full URL, we extract the ID if needed
+    clean_id = dataset_id.split("/")[-1]
+    url = f"https://api.apify.com/v2/datasets/{clean_id}/items"
+    params = {}
+    if token:
+        params["token"] = token
+        
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url, params=params)
+        response.raise_for_status()
+        items = response.json()
+        
+    if not isinstance(items, list):
+        return 0
+        
+    return await process_lead_import_batch(db, workspace_id, items, source=f"Apify: {clean_id}")
+
+
+def parse_csv_to_leads(file_content: bytes) -> list[dict]:
+    import csv
+    import io
+    
+    text = file_content.decode("utf-8")
+    reader = csv.DictReader(io.StringIO(text))
+    return list(reader)
+
+
+async def process_lead_import_batch(
+    db: AsyncSession,
+    workspace_id: uuid.UUID,
+    items: list[dict],
+    source: str = "CSV Import"
+) -> int:
+    from app.companies.models import Company
+    from app.contacts.models import Contact
+    
+    processed = 0
+    
+    for item in items:
+        # 1. Map fields (Common Apify / LinkedIn / Gmaps keys)
+        email = (item.get("email") or item.get("emailAddress") or item.get("primaryEmail") or "").strip().lower()
+        first_name = item.get("firstName") or item.get("givenName") or item.get("first_name") or ""
+        last_name = item.get("lastName") or item.get("familyName") or item.get("last_name") or ""
+        job_title = item.get("job_title") or item.get("title") or item.get("position") or ""
+        
+        company_name = item.get("companyName") or item.get("company") or item.get("organization") or ""
+        website = item.get("website") or item.get("url") or item.get("domain") or ""
+        
+        # Skip if no way to identify lead
+        if not email and not first_name:
+            continue
+            
+        # 2. Upsert Company
+        company_id = None
+        if company_name:
+            # Try to find by domain or name
+            domain = website.replace("https://", "").replace("http://", "").split("/")[0] if website else None
+            q = select(Company).where(Company.workspace_id == workspace_id)
+            if domain:
+                q = q.where((Company.domain == domain) | (Company.name == company_name))
+            else:
+                q = q.where(Company.name == company_name)
+            
+            res = await db.execute(q)
+            company = res.scalar_one_or_none()
+            
+            if not company:
+                company = Company(
+                    workspace_id=workspace_id,
+                    name=company_name,
+                    domain=domain,
+                    website=website,
+                    source=source
+                )
+                db.add(company)
+                await db.flush() # Get ID
+            company_id = company.id
+
+        # 3. Upsert Contact
+        contact_id = None
+        if email:
+            res = await db.execute(
+                select(Contact).where(Contact.workspace_id == workspace_id, Contact.email == email)
+            )
+            contact = res.scalar_one_or_none()
+            
+            if not contact:
+                contact = Contact(
+                    workspace_id=workspace_id,
+                    company_id=company_id,
+                    email=email,
+                    first_name=first_name,
+                    last_name=last_name,
+                    job_title=job_title,
+                    linkedin_url=item.get("linkedinUrl") or item.get("linkedin_url")
+                )
+                db.add(contact)
+                await db.flush()
+            contact_id = contact.id
+            
+        # 4. Create Lead
+        # Check if lead already exists for this contact
+        if contact_id:
+            res = await db.execute(
+                select(Lead).where(Lead.workspace_id == workspace_id, Lead.contact_id == contact_id)
+            )
+            existing_lead = res.scalar_one_or_none()
+            if existing_lead:
+                # Update metadata if needed
+                existing_lead.extra = {**(existing_lead.extra or {}), **item}
+                continue
+        
+        new_lead = Lead(
+            workspace_id=workspace_id,
+            contact_id=contact_id,
+            company_id=company_id,
+            source=source,
+            status=LeadStatus.RAW,
+            extra=item
+        )
+        db.add(new_lead)
+        processed += 1
+        
+    await db.commit()
+    return processed

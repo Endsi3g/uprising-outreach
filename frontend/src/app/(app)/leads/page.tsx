@@ -6,6 +6,7 @@ import { apiClient } from "@/lib/api";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Input, Button, Badge } from "@/components/ui";
 import LeadsTable from "@/components/leads/LeadsTable";
+import { ImportModal } from "@/components/leads/ImportModal";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLeadsStore } from "@/store/leads";
 import type { Lead, Page } from "@/types/leads";
@@ -25,7 +26,7 @@ export default function LeadsPage() {
   const [filter, setFilter] = useState("all");
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   
-  const { selectedIds, clearSelection } = useLeadsStore();
+  const { selectedIds, clearSelection, openImportModal } = useLeadsStore();
 
   const { data, isLoading } = useQuery<Page<Lead>>({
     queryKey: ["leads", search, filter],
@@ -60,7 +61,7 @@ export default function LeadsPage() {
           actions={
             <div className="flex gap-2">
               <Button variant="secondary" size="sm">Exporter</Button>
-              <Button variant="primary" size="sm">Importer des leads</Button>
+              <Button variant="primary" size="sm" onClick={openImportModal}>Importer des leads</Button>
             </div>
           }
         />
@@ -233,6 +234,8 @@ export default function LeadsPage() {
           </>
         )}
       </AnimatePresence>
+
+      <ImportModal />
     </div>
   );
 }

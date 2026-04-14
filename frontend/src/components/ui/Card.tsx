@@ -17,11 +17,11 @@ const paddingMap = {
 export function Card({ children, className, style, padding = "md" }: CardProps) {
   return (
     <div
-      className={clsx("rounded-lg", paddingMap[padding], className)}
+      className={clsx(paddingMap[padding], className)}
       style={{
+        borderRadius: "var(--radius-md)",
         background: "var(--color-surface)",
-        border: "1px solid var(--color-border)",
-        boxShadow: "var(--shadow-ring)",
+        boxShadow: "0 0 0 1px var(--color-border-subtle)",
         ...style,
       }}
     >

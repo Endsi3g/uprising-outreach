@@ -217,13 +217,14 @@ export function AppSidebar({ collapsed, onToggle }: SidebarProps) {
 
         <div className="mx-3 h-px bg-[--color-border] mb-4" />
 
-        <div className="px-2 mb-4">
+        <div className="mx-2 mb-6 p-2 rounded-2xl bg-[--color-surface-2]/50 border border-[--color-border-subtle] shadow-sm">
           {!collapsed && (
-            <p className="text-[10px] font-medium uppercase tracking-widest px-2.5 mb-2 text-[--color-text-tertiary]">
+            <p className="text-[10px] font-bold uppercase tracking-[0.15em] px-3 mb-3 text-[--color-orange-vibrant] flex items-center gap-2">
+              <span className="w-1 h-1 rounded-full bg-[--color-orange-vibrant] animate-pulse" />
               Assistants IA
             </p>
           )}
-          <div className="space-y-0.5">
+          <div className="space-y-1">
             {AI_ASSISTANTS.map((item) => (
               <NavItem
                 key={item.href}

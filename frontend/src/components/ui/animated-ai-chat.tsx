@@ -14,6 +14,13 @@ import {
     Sparkles,
     Command,
     Zap,
+    Mic,
+    ChevronDown,
+    AudioLines,
+    Mail,
+    Calendar,
+    PenTool as Pen,
+    Paperclip as Clip,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import * as React from "react"
@@ -140,8 +147,13 @@ export function AnimatedAIChat() {
         maxHeight: 200,
     });
     const [inputFocused, setInputFocused] = useState(false);
+    const [selectedModel, setSelectedModel] = useState("Sonnet 4.6");
+    const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
     const commandPaletteRef = useRef<HTMLDivElement>(null);
+    const modelDropdownRef = useRef<HTMLDivElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    const models = ["Sonnet 4.6", "Haiku 4.1", "Opus 4.5", "GPT-4o", "O1-preview"];
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -204,6 +216,24 @@ export function AnimatedAIChat() {
             label: "Improve", 
             description: "Improve existing UI design", 
             prefix: "/improve" 
+        },
+        { 
+            icon: <PlusIcon className="w-4 h-4" />, 
+            label: "Project", 
+            description: "Create a new CRM project", 
+            prefix: "/project" 
+        },
+        { 
+            icon: <SendIcon className="w-4 h-4" />, 
+            label: "Draft", 
+            description: "Draft a personalized email", 
+            prefix: "/draft" 
+        },
+        { 
+            icon: <Paperclip className="w-4 h-4" />, 
+            label: "Capture", 
+            description: "Capture lead from LinkedIn URL", 
+            prefix: "/capture" 
         },
     ];
 
@@ -306,16 +336,18 @@ export function AnimatedAIChat() {
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -10 }}
-                            className="text-center space-y-3 mb-12 flex-shrink-0"
+                            className="text-center py-12 flex-shrink-0"
                         >
-                            <div className="inline-block">
-                                <h1 className="text-3xl font-medium tracking-tight text-[--color-text] pb-1 font-serif">
-                                    <span className="text-[--color-cta] mr-2">✺</span>
+                            <div className="flex items-center justify-center gap-2.5 mb-2">
+                                <span className="text-[--color-cta] text-2xl">✺</span>
+                                <h1
+                                    className="text-4xl font-normal leading-tight"
+                                    style={{ fontFamily: "var(--font-serif)", color: "var(--color-text)" }}
+                                >
                                     Bon après-midi, Kael
                                 </h1>
-                                <div className="h-px bg-gradient-to-r from-transparent via-[--color-cta]/20 to-transparent w-full" />
                             </div>
-                            <p className="text-sm text-[--color-text-tertiary]">
+                            <p className="text-sm uppercase tracking-[0.1em] font-medium" style={{ color: "var(--color-text-tertiary)" }}>
                                 Comment puis-je accélérer votre prospection aujourd'hui ?
                             </p>
                         </motion.div>
@@ -327,15 +359,15 @@ export function AnimatedAIChat() {
                         {messages.map((msg, i) => (
                             <motion.div
                                 key={i}
-                                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                initial={{ opacity: 0, y: 10, scale: 0.98 }}
                                 animate={{ opacity: 1, y: 0, scale: 1 }}
                                 className={cn("flex flex-col gap-2", msg.role === "user" ? "items-end" : "items-start")}
                             >
                                 <div className={cn(
-                                    "max-w-[85%] px-4 py-3 rounded-2xl text-[14px] leading-relaxed whitespace-pre-wrap",
+                                    "max-w-[85%] px-5 py-3.5 rounded-2xl text-[14px] leading-relaxed whitespace-pre-wrap transition-all",
                                     msg.role === "user" 
-                                        ? "bg-[--color-surface-2] text-[--color-text] border border-[--color-border] shadow-sm" 
-                                        : "bg-transparent text-[--color-text] border-l-2 border-[--color-cta]/20 pl-6"
+                                        ? "bg-[--color-surface] text-[--color-text] shadow-[0_0_0_1px_var(--color-border-subtle)]" 
+                                        : "bg-transparent text-[--color-text] border-l border-[--color-border-warm] pl-8"
                                 )}>
                                     {msg.content}
                                 </div>

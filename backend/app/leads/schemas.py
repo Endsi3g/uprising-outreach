@@ -59,8 +59,13 @@ class BulkActionResponse(BaseModel):
     job_id: str | None = None
 
 
-class CSVImportResponse(BaseModel):
-    job_id: str
+class ApifyImportRequest(BaseModel):
+    dataset_id: str = Field(..., description="The ID or URL of the Apify dataset")
+    token: str | None = Field(None, description="Apify API Token (if private dataset)")
+
+
+class ImportResponse(BaseModel):
+    items_count: int
     message: str
 
 

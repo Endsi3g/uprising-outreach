@@ -17,6 +17,8 @@ from app.leads.schemas import (
     LeadResponse,
     LeadStatsResponse,
     LeadUpdate,
+    ApifyImportRequest,
+    ImportResponse,
 )
 from app.shared.pagination import Page
 
@@ -104,6 +106,54 @@ async def bulk_action(
     db: AsyncSession = Depends(get_db),
 ) -> BulkActionResponse:
     return await service.bulk_action(db, current_user.workspace_id, payload)
+
+@router.post("/import/apify", response_model=ImportResponse)
+async def import_apify(
+    payload: ApifyImportRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> ImportResponse:
+    """Import leads directly from an Apify dataset."""
+    from app.shared.exceptions import BusinessRuleError
+    
+    try:
+        processed = await service.import_leads_from_apify(
+            db, 
+            current_user.workspace_id, 
+            payload.dataset_id, 
+            payload.token
+        )
+        return ImportResponse(
+            items_count=processed, 
+            message=f"Successfully imported {processed} leads from Apify."
+        )
+    except Exception as e:
+        raise BusinessRuleError(f"Apify import failed: {str(e)}")
+
+
+@router.post("/import/csv", response_model=ImportResponse)
+async def import_csv_direct(
+    file: Annotated[UploadFile, File()],
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> ImportResponse:
+    """Import leads from an Apify or standard CSV with auto-mapping."""
+    from app.shared.exceptions import BusinessRuleError
+    
+    content = await file.read()
+    try:
+        items = service.parse_csv_to_leads(content)
+        # Limit to 500 for sync processing to avoid timeouts
+        if len(items) > 500:
+            items = items[:500]
+            
+        processed = await service.process_lead_import_batch(db, current_user.workspace_id, items, source="CSV Auto-Import")
+        return ImportResponse(
+            items_count=processed,
+            message=f"Successfully imported {processed} leads from CSV."
+        )
+    except Exception as e:
+        raise BusinessRuleError(f"CSV import failed: {str(e)}")
 
 
 @router.post("/import", response_model=CSVImportResponse, status_code=202)

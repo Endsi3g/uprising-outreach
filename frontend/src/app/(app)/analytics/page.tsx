@@ -151,87 +151,86 @@ export default function AnalyticsPage() {
   ];
 
   return (
-    <div className="p-6 lg:p-8 max-w-[1100px] mx-auto">
+    <div className="p-6 lg:p-12 max-w-[1200px] mx-auto animate-fade-in">
       {/* ── Greeting ─────────────────────────────────────────────── */}
-      <div className="mb-8 animate-fade-in">
-        <h1
-          className="text-2xl font-medium flex items-center gap-2"
-          style={{ fontFamily: "var(--font-serif)", color: "var(--color-text)" }}
-        >
-          Bonjour, Kael <span className="text-xl">👋</span>
-        </h1>
-        <p className="text-sm mt-1 capitalize" style={{ color: "var(--color-text-secondary)" }}>
+      <div className="mb-12 text-center">
+        <div className="flex items-center justify-center gap-2.5 mb-2">
+          <span className="text-[--color-cta] text-2xl">✺</span>
+          <h1
+            className="text-4xl font-normal leading-tight"
+            style={{ fontFamily: "var(--font-serif)", color: "var(--color-text)" }}
+          >
+            Bonjour, Kael
+          </h1>
+        </div>
+        <p className="text-sm uppercase tracking-[0.1em] font-medium" style={{ color: "var(--color-text-tertiary)" }}>
           {dateStr} · Uprising Studio
         </p>
       </div>
 
       {/* ── KPI Row ──────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-12">
         {kpis.map(({ label, value, sub }, i) => (
           <div
             key={label}
-            className="px-4 py-4 rounded-xl card-hover animate-fade-in"
+            className="px-5 py-5 rounded-2xl animate-fade-in"
             style={{
-              background: "var(--color-bg)",
-              border: "1px solid var(--color-border)",
+              background: "var(--color-surface)",
+              boxShadow: "0 0 0 1px var(--color-border-subtle)",
               animationDelay: `${i * 60}ms`,
               animationFillMode: "both",
             }}
           >
-            <p className="text-xs uppercase tracking-wide font-medium mb-2" style={{ color: "var(--color-text-tertiary)" }}>
+            <p className="text-[10px] uppercase tracking-widest font-bold mb-3" style={{ color: "var(--color-text-tertiary)" }}>
               {label}
             </p>
             <p
-              className="text-3xl font-medium tabular-nums"
+              className="text-4xl font-normal tabular-nums mb-1"
               style={{ fontFamily: "var(--font-serif)", color: "var(--color-text)" }}
             >
               {value}
             </p>
-            <p className="text-xs mt-1" style={{ color: "var(--color-text-secondary)" }}>{sub}</p>
+            <p className="text-xs font-medium" style={{ color: "var(--color-text-secondary)" }}>{sub}</p>
           </div>
         ))}
       </div>
 
       {/* ── Two-Column: Campaigns + Inbox ─────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-12">
         {/* Active Campaigns */}
         <div className="animate-fade-in" style={{ animationDelay: "200ms", animationFillMode: "both" }}>
           <h2
-            className="text-base font-medium mb-4"
+            className="text-xl font-normal mb-6"
             style={{ fontFamily: "var(--font-serif)", color: "var(--color-text)" }}
           >
             Canaux de prospection
           </h2>
-          <div className="space-y-3">
+          <div className="space-y-0 border-t border-[--color-border-subtle]">
             {s.source_stats?.length > 0 ? s.source_stats.map((c: any) => (
               <div
                 key={c.name}
-                className="px-4 py-3.5 rounded-xl card-hover"
-                style={{
-                  background: "var(--color-bg)",
-                  border: "1px solid var(--color-border)",
-                }}
+                className="py-5 border-b border-[--color-border-subtle] interactive group cursor-pointer"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm font-medium" style={{ color: "var(--color-text)" }}>{c.name}</p>
+                  <p className="text-base font-medium group-hover:text-[--color-cta] transition-colors" style={{ color: "var(--color-text)" }}>{c.name}</p>
                   <span
-                    className="text-xs px-2 py-0.5 rounded-full font-medium"
+                    className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider"
                     style={{
-                      background: "rgba(22,101,52,0.25)",
-                      color: "#4ade80",
+                      background: "var(--color-surface-2)",
+                      color: "var(--color-text-secondary)",
                     }}
                   >
                     {c.status}
                   </span>
                 </div>
-                <div className="flex items-center gap-4 text-xs" style={{ color: "var(--color-text-secondary)" }}>
-                  <span><strong className="text-sm tabular-nums" style={{ color: "var(--color-text)" }}>{c.sent}</strong> envoyés</span>
-                  <span><strong className="text-sm tabular-nums" style={{ color: "var(--color-text)" }}>{c.replies}</strong> réponses</span>
-                  <span><strong className="text-sm tabular-nums" style={{ color: "#4ade80" }}>{c.positives}</strong> positives</span>
+                <div className="flex items-center gap-5 text-sm" style={{ color: "var(--color-text-tertiary)" }}>
+                  <span><strong className="font-semibold tabular-nums" style={{ color: "var(--color-text)" }}>{c.sent}</strong> envoyés</span>
+                  <span><strong className="font-semibold tabular-nums" style={{ color: "var(--color-text)" }}>{c.replies}</strong> réponses</span>
+                  <span><strong className="font-semibold tabular-nums text-[--color-cta]" style={{ color: "" }}>{c.positives}</strong> positives</span>
                 </div>
               </div>
             )) : (
-              <div className="text-xs p-8 text-center border rounded-xl border-dashed" style={{ color: "var(--color-text-tertiary)" }}>
+              <div className="text-xs py-10 text-center border-b border-[--color-border-subtle]" style={{ color: "var(--color-text-tertiary)" }}>
                 Aucune donnée de campagne disponible.
               </div>
             )}
@@ -241,46 +240,45 @@ export default function AnalyticsPage() {
         {/* Recent Inbox */}
         <div className="animate-fade-in" style={{ animationDelay: "280ms", animationFillMode: "both" }}>
           <h2
-            className="text-base font-medium mb-4"
+            className="text-xl font-normal mb-6"
             style={{ fontFamily: "var(--font-serif)", color: "var(--color-text)" }}
           >
             Inbox récente
           </h2>
-          <div className="space-y-1">
+          <div className="space-y-0 border-t border-[--color-border-subtle]">
             {s.recent_replies?.length > 0 ? s.recent_replies.map((msg: any) => {
               const initials = msg.notes?.split(' ').map((n: string) => n[0]).join('').slice(0,2) || "??";
               const time = new Date(msg.updated_at).toLocaleTimeString("fr-CA", { hour: '2-digit', minute: '2-digit' });
               return (
                 <div
                   key={msg.id}
-                  className="flex items-start gap-3 px-4 py-3 rounded-xl interactive cursor-pointer"
-                  style={{ background: "transparent" }}
+                  className="flex items-start gap-4 py-5 border-b border-[--color-border-subtle] interactive cursor-pointer group"
                 >
                   <div
-                    className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0"
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 transition-transform group-hover:scale-105"
                     style={{ background: "var(--color-surface-2)", color: "var(--color-text)" }}
                   >
                     {initials}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-sm font-medium truncate" style={{ color: "var(--color-text)" }}>Lead #{msg.id.slice(0,5)}</p>
+                      <p className="text-base font-medium truncate mb-0.5" style={{ color: "var(--color-text)" }}>Lead #{msg.id.slice(0,5)}</p>
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <span className="text-xs tabular-nums" style={{ color: "var(--color-text-tertiary)" }}>{time}</span>
                         <span
-                          className="text-xs px-1.5 py-0.5 rounded font-medium"
-                          style={{ background: "rgba(22,101,52,0.25)", color: "#4ade80" }}
+                          className="text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider"
+                          style={{ background: "var(--color-surface-2)", color: "var(--color-text-tertiary)" }}
                         >
                           replied
                         </span>
                       </div>
                     </div>
-                    <p className="text-xs mt-0.5 truncate" style={{ color: "var(--color-text-secondary)" }}>{msg.source || "Pas de source"}</p>
+                    <p className="text-sm truncate" style={{ color: "var(--color-text-secondary)" }}>{msg.source || "Génération automatique"}</p>
                   </div>
                 </div>
               );
             }) : (
-              <div className="text-xs p-8 text-center border rounded-xl border-dashed" style={{ color: "var(--color-text-tertiary)" }}>
+              <div className="text-xs py-10 text-center border-b border-[--color-border-subtle]" style={{ color: "var(--color-text-tertiary)" }}>
                 Aucune réponse récente.
               </div>
             )}
@@ -291,27 +289,27 @@ export default function AnalyticsPage() {
       {/* ── Pipeline Row ──────────────────────────────────────── */}
       <div className="animate-fade-in" style={{ animationDelay: "360ms", animationFillMode: "both" }}>
         <h2
-          className="text-base font-medium mb-4"
+          className="text-xl font-normal mb-6"
           style={{ fontFamily: "var(--font-serif)", color: "var(--color-text)" }}
         >
           Pipeline — opportunités actives
         </h2>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {pipeline.map((col) => (
             <div key={col.stage}>
-              <div className="flex items-center gap-2 mb-2 px-1">
-                <span className="text-xs font-medium" style={{ color: "var(--color-text-secondary)" }}>{col.stage}</span>
-                <span className="text-xs px-1.5 py-0.5 rounded-full" style={{ background: "var(--color-surface-2)", color: "var(--color-text-tertiary)" }}>{col.items}</span>
+              <div className="flex items-center justify-between mb-3 px-1 text-[10px] uppercase tracking-widest font-bold" style={{ color: "var(--color-text-tertiary)" }}>
+                <span>{col.stage}</span>
+                <span className="px-1.5 py-0.5 rounded-full bg-[--color-surface-2]">{col.items}</span>
               </div>
               <div
-                className="px-3.5 py-3 rounded-xl card-hover cursor-pointer opacity-50"
+                className="px-5 py-5 rounded-2xl cursor-pointer transition-all hover:bg-[--color-surface-2]"
                 style={{
-                  background: "var(--color-bg)",
-                  border: "1px solid var(--color-border)",
+                  background: "var(--color-surface)",
+                  boxShadow: "0 0 0 1px var(--color-border-subtle)",
                 }}
               >
-                <p className="text-[10px] uppercase font-bold" style={{ color: "var(--color-text-tertiary)" }}>Valeur estimée</p>
-                <p className="text-lg font-medium tabular-nums" style={{ color: "var(--color-text)" }}>
+                <p className="text-[10px] uppercase font-bold tracking-wider mb-2" style={{ color: "var(--color-text-tertiary)" }}>Valeur estimée</p>
+                <p className="text-2xl font-normal tabular-nums" style={{ color: "var(--color-text)", fontFamily: "var(--font-serif)" }}>
                   ${(col.items * 250).toLocaleString()}
                 </p>
               </div>

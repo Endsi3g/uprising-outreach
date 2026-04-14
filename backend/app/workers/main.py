@@ -4,7 +4,7 @@ from arq.connections import RedisSettings
 
 from app.config import settings
 from app.workers.import_tasks import import_leads_task
-
+from app.workers.capture_tasks import capture_linkedin_lead_task
 
 async def startup(ctx: dict) -> None:
     from app.database import AsyncSessionLocal
@@ -18,6 +18,7 @@ async def shutdown(ctx: dict) -> None:
 class WorkerSettings:
     functions = [
         import_leads_task,
+        capture_linkedin_lead_task,
     ]
     redis_settings = RedisSettings.from_dsn(settings.redis_url)
     max_jobs = 10
