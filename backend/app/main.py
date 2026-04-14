@@ -90,6 +90,9 @@ def create_app() -> FastAPI:
     from app.webhooks.router import router as webhooks_router
     app.include_router(webhooks_router, prefix="/api/v1")
 
+    from app.campaigns.router import router as campaigns_router
+    app.include_router(campaigns_router, prefix="/api/v1")
+
     return app
 
 

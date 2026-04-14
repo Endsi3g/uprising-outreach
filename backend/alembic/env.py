@@ -15,6 +15,7 @@ import app.leads.models  # noqa: F401
 import app.companies.models  # noqa: F401
 import app.contacts.models  # noqa: F401
 import app.senders.models  # noqa: F401
+import app.campaigns.models  # noqa: F401
 
 config = context.config
 fileConfig(config.config_file_name)  # type: ignore[arg-type]
