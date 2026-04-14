@@ -79,3 +79,44 @@ async def score_lead_with_ai(lead_data: dict) -> Optional[ScoringResult]:
     except Exception as e:
         logger.error(f"Error calling AI API for lead scoring: {str(e)}")
         return None
+
+
+_VALID_CLASSIFICATIONS = {
+    "INTERESTED", "NOT_INTERESTED", "QUESTION",
+    "OUT_OF_OFFICE", "BOUNCE", "REFERRAL", "UNCLASSIFIED",
+}
+
+_CLASSIFICATION_PROMPT = """Classify this email reply into EXACTLY ONE of these categories:
+INTERESTED — positive interest, wants to continue or learn more
+NOT_INTERESTED — explicitly declines or not interested
+QUESTION — asks a clarifying question without committing
+OUT_OF_OFFICE — automatic out-of-office message
+BOUNCE — delivery failure / undeliverable notification
+REFERRAL — refers to another person/department
+UNCLASSIFIED — does not fit any category above
+
+Email text:
+{text}
+
+Respond with ONLY the category name, nothing else."""
+
+
+async def classify_inbox_message(text: str) -> str:
+    """Classify an inbound email reply. Returns one of the _VALID_CLASSIFICATIONS."""
+    if not settings.anthropic_api_key or not text.strip():
+        return "UNCLASSIFIED"
+
+    client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key)
+    try:
+        response = await client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=20,
+            messages=[
+                {"role": "user", "content": _CLASSIFICATION_PROMPT.format(text=text[:800])}
+            ],
+        )
+        label = response.content[0].text.strip().upper()
+        return label if label in _VALID_CLASSIFICATIONS else "UNCLASSIFIED"
+    except Exception as exc:
+        logger.error("Classification error: %s", exc)
+        return "UNCLASSIFIED"

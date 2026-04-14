@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api";
 import { Badge, Button } from "@/components/ui";
 import { Spinner } from "@/components/ui/Spinner";
@@ -19,27 +19,91 @@ const CLASSIFICATION_COLOR: Record<string, ClassificationColor> = {
   REFERRAL: "green",
 };
 
-const MOCK_THREAD = [
-  { id: 1, role: "assistant", content: "Bonjour Luc, j'ai vu votre profil LinkedIn et votre travail sur l'automatisation des ventes. Est-ce que vous seriez ouvert à en discuter ?", time: "Hier 14:00" },
-  { id: 2, role: "lead", content: "Bonjour, oui pourquoi pas. Que proposez-vous exactement ?", time: "Hier 16:30" },
-  { id: 3, role: "assistant", content: "Nous aidons les équipes comme la vôtre à automatiser le sourcing de leads qualifiés avec une approche personnalisée par IA. Seriez-vous disponible Jeudi matin pour un appel de 15 minutes ?", time: "Aujourd'hui 09:00" }
-];
+interface Conversation {
+  id: string;
+  channel: string;
+  subject: string;
+  participant_name: string;
+  participant_email: string;
+  status: string;
+  classification: string;
+  last_message_at: string | null;
+  created_at: string;
+}
+
+interface Message {
+  id: string;
+  direction: "inbound" | "outbound";
+  sender_name: string;
+  sender_email: string;
+  body_text: string;
+  sent_at: string | null;
+  created_at: string;
+}
+
+const CHANNEL_LABELS: Record<string, string> = {
+  all: "Tous",
+  gmail: "Gmail",
+  messenger: "Messenger",
+};
+
+function formatDate(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const now = new Date();
+  const diffMs = now.getTime() - d.getTime();
+  const diffH = diffMs / 3_600_000;
+  if (diffH < 24) return d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  if (diffH < 48) return "Hier";
+  return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+}
 
 export default function InboxPage() {
+  const qc = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [reply, setReply] = useState("");
+  const [channelFilter, setChannelFilter] = useState("all");
 
-  const { data, isLoading } = useQuery<{ data: any[] }>({
-    queryKey: ["inbox"],
-    queryFn: () => apiClient.get("/inbox/conversations?limit=50"),
+  // ── Conversations list ────────────────────────────────────────────────────
+  const convQuery = useQuery<{ data: Conversation[]; total: number }>({
+    queryKey: ["inbox", channelFilter],
+    queryFn: () =>
+      apiClient.get(
+        channelFilter === "all"
+          ? "/inbox/conversations?limit=50"
+          : `/inbox/conversations?limit=50&channel=${channelFilter}`
+      ),
     retry: false,
   });
 
-  const conversations = data?.data ?? [
-    { id: "1", receiver_email: "luc.richard@tech.com", subject: "Re: Automatisation des ventes", classification: "INTERESTED", received_at: new Date().toISOString() },
-    { id: "2", receiver_email: "sarah.levy@corp.fr", subject: "Question sur vos tarifs", classification: "QUESTION", received_at: new Date().toISOString() }
-  ];
-  const selected = conversations.find((c: any) => c.id === selectedId);
+  const conversations: Conversation[] = convQuery.data?.data ?? [];
+  const selected = conversations.find((c) => c.id === selectedId) ?? null;
+
+  // ── Messages for selected conversation ───────────────────────────────────
+  const msgQuery = useQuery<Message[]>({
+    queryKey: ["inbox-messages", selectedId],
+    queryFn: () => apiClient.get(`/inbox/conversations/${selectedId}/messages`),
+    enabled: !!selectedId,
+    retry: false,
+  });
+
+  const messages: Message[] = msgQuery.data ?? [];
+
+  // ── Reply mutation ────────────────────────────────────────────────────────
+  const replyMutation = useMutation({
+    mutationFn: (body: string) =>
+      apiClient.post(`/inbox/conversations/${selectedId}/reply`, { body }),
+    onSuccess: () => {
+      setReply("");
+      qc.invalidateQueries({ queryKey: ["inbox-messages", selectedId] });
+      qc.invalidateQueries({ queryKey: ["inbox", channelFilter] });
+    },
+  });
+
+  const handleSend = () => {
+    if (!reply.trim() || !selectedId) return;
+    replyMutation.mutate(reply.trim());
+  };
 
   return (
     <div className="flex h-full overflow-hidden bg-[--color-bg]">
@@ -48,16 +112,40 @@ export default function InboxPage() {
         <div className="px-6 py-5 border-b border-[--color-border]">
           <h1 className="text-xl font-medium font-serif text-[--color-text]">Inbox</h1>
           <p className="text-xs text-[--color-text-secondary] mt-1">
-            {conversations.length} conversations actives
+            {convQuery.data?.total ?? conversations.length} conversations
           </p>
+
+          {/* Channel filter tabs */}
+          <div className="flex gap-1 mt-3">
+            {Object.entries(CHANNEL_LABELS).map(([key, label]) => (
+              <button
+                key={key}
+                onClick={() => setChannelFilter(key)}
+                className={cn(
+                  "px-3 py-1 text-xs rounded-full border transition-all",
+                  channelFilter === key
+                    ? "bg-[--color-cta] border-[--color-cta] text-white"
+                    : "border-[--color-border] text-[--color-text-secondary] hover:border-[--color-cta]"
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto custom-scrollbar">
-          {isLoading ? (
+          {convQuery.isLoading ? (
             <div className="flex justify-center py-10"><Spinner /></div>
+          ) : conversations.length === 0 ? (
+            <div className="px-6 py-10 text-center text-sm text-[--color-text-secondary]">
+              Aucune conversation.
+              <br />
+              <span className="text-xs mt-1 block">Connectez votre Gmail dans les Paramètres.</span>
+            </div>
           ) : (
             <div className="divide-y divide-[--color-border-subtle]">
-              {conversations.map((conv: any) => (
+              {conversations.map((conv) => (
                 <motion.button
                   key={conv.id}
                   whileHover={{ backgroundColor: "var(--color-surface-2)" }}
@@ -68,27 +156,30 @@ export default function InboxPage() {
                   )}
                 >
                   {selectedId === conv.id && (
-                    <motion.div 
+                    <motion.div
                       layoutId="inbox-active-indicator"
-                      className="absolute left-0 top-0 bottom-0 w-1 bg-[--color-cta]" 
+                      className="absolute left-0 top-0 bottom-0 w-1 bg-[--color-cta]"
                     />
                   )}
                   <div className="flex items-center justify-between mb-1">
                     <p className="text-sm font-semibold truncate text-[--color-text]">
-                      {conv.receiver_email.split('@')[0]}
+                      {conv.participant_name || conv.participant_email.split("@")[0]}
                     </p>
                     <span className="text-[10px] text-[--color-text-tertiary] font-medium">
-                      {conv.received_at ? new Date(conv.received_at).toLocaleDateString() : ""}
+                      {formatDate(conv.last_message_at ?? conv.created_at)}
                     </span>
                   </div>
                   <p className="text-xs font-medium text-[--color-text] truncate mb-1">
                     {conv.subject}
                   </p>
                   <div className="flex items-center gap-2">
-                    {conv.classification && (
+                    {conv.classification && conv.classification !== "UNCLASSIFIED" && (
                       <Badge color={CLASSIFICATION_COLOR[conv.classification] ?? "default"}>
                         {conv.classification.toLowerCase()}
                       </Badge>
+                    )}
+                    {conv.channel !== "gmail" && (
+                      <Badge color="default">{conv.channel}</Badge>
                     )}
                   </div>
                 </motion.button>
@@ -102,7 +193,7 @@ export default function InboxPage() {
       <div className="flex-1 flex flex-col overflow-hidden bg-[--color-bg]">
         <AnimatePresence mode="wait">
           {selected ? (
-            <motion.div 
+            <motion.div
               key={selected.id}
               initial={{ opacity: 0, x: 10 }}
               animate={{ opacity: 1, x: 0 }}
@@ -114,64 +205,90 @@ export default function InboxPage() {
               <div className="px-8 py-5 border-b border-[--color-border] flex items-center justify-between bg-[--color-surface]">
                 <div>
                   <h2 className="text-lg font-medium text-[--color-text] font-serif">{selected.subject}</h2>
-                  <p className="text-xs text-[--color-text-secondary] mt-0.5">{selected.receiver_email}</p>
+                  <p className="text-xs text-[--color-text-secondary] mt-0.5">
+                    {selected.participant_name
+                      ? `${selected.participant_name} <${selected.participant_email}>`
+                      : selected.participant_email}
+                  </p>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="secondary" size="sm">Assigner</Button>
+                  {selected.classification && selected.classification !== "UNCLASSIFIED" && (
+                    <Badge color={CLASSIFICATION_COLOR[selected.classification] ?? "default"}>
+                      {selected.classification.toLowerCase()}
+                    </Badge>
+                  )}
                   <Button variant="secondary" size="sm">Fermer</Button>
                 </div>
               </div>
 
-              {/* Thread Messages */}
+              {/* Messages */}
               <div className="flex-1 overflow-y-auto px-12 py-8 space-y-8 custom-scrollbar">
-                {MOCK_THREAD.map((msg) => (
-                  <div key={msg.id} className={cn(
-                    "flex flex-col max-w-[80%]",
-                    msg.role === "assistant" ? "ml-0" : "ml-auto items-end"
-                  )}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[--color-text-tertiary]">
-                        {msg.role === "assistant" ? "Vous" : selected.receiver_email.split('@')[0]}
-                      </span>
-                      <span className="text-[10px] text-[--color-text-tertiary]">• {msg.time}</span>
-                    </div>
-                    <div className={cn(
-                      "rounded-2xl px-5 py-4 text-[15px] leading-relaxed shadow-sm border",
-                      msg.role === "assistant" 
-                        ? "bg-[--color-surface] border-[--color-border] text-[--color-text]" 
-                        : "bg-[--color-bg] border-[--color-border-warm] text-[--color-text]"
-                    )}>
-                      {msg.content}
-                    </div>
-                  </div>
-                ))}
+                {msgQuery.isLoading ? (
+                  <div className="flex justify-center py-10"><Spinner /></div>
+                ) : messages.length === 0 ? (
+                  <p className="text-sm text-center text-[--color-text-secondary]">Aucun message.</p>
+                ) : (
+                  messages.map((msg) => {
+                    const isOutbound = msg.direction === "outbound";
+                    return (
+                      <div
+                        key={msg.id}
+                        className={cn(
+                          "flex flex-col max-w-[80%]",
+                          isOutbound ? "ml-auto items-end" : "ml-0"
+                        )}
+                      >
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[--color-text-tertiary]">
+                            {isOutbound ? "Vous" : (msg.sender_name || selected.participant_email.split("@")[0])}
+                          </span>
+                          <span className="text-[10px] text-[--color-text-tertiary]">
+                            • {formatDate(msg.sent_at ?? msg.created_at)}
+                          </span>
+                        </div>
+                        <div className={cn(
+                          "rounded-2xl px-5 py-4 text-[15px] leading-relaxed shadow-sm border whitespace-pre-wrap",
+                          isOutbound
+                            ? "bg-[--color-bg] border-[--color-border-warm] text-[--color-text]"
+                            : "bg-[--color-surface] border-[--color-border] text-[--color-text]"
+                        )}>
+                          {msg.body_text}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
 
               {/* Reply Composer */}
               <div className="px-8 py-6 border-t border-[--color-border] bg-[--color-surface]">
                 <div className="max-w-4xl mx-auto border border-[--color-border] rounded-2xl bg-[--color-bg] shadow-sm flex flex-col p-4">
-                  <textarea 
+                  <textarea
                     value={reply}
                     onChange={(e) => setReply(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleSend();
+                    }}
                     className="w-full bg-transparent outline-none text-sm resize-none mb-4"
-                    placeholder="Répondre à Luc..."
+                    placeholder={`Répondre à ${selected.participant_name || selected.participant_email.split("@")[0]}…`}
                     rows={3}
                   />
-                  <div className="flex justify-end">
-                    <Button 
-                      variant="primary" 
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] text-[--color-text-tertiary]">⌘↵ pour envoyer</span>
+                    <Button
+                      variant="primary"
                       size="sm"
-                      disabled={!reply.trim()}
-                      onClick={() => { setReply(""); /* Mock send */ }}
+                      disabled={!reply.trim() || replyMutation.isPending}
+                      onClick={handleSend}
                     >
-                      Envoyer la réponse
+                      {replyMutation.isPending ? <Spinner size={14} /> : "Envoyer"}
                     </Button>
                   </div>
                 </div>
               </div>
             </motion.div>
           ) : (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               className="flex-1 flex flex-col items-center justify-center p-12 text-center"
@@ -179,7 +296,9 @@ export default function InboxPage() {
               <div className="w-16 h-16 rounded-full bg-[--color-surface-2] flex items-center justify-center text-2xl mb-6">
                 📥
               </div>
-              <h2 className="text-xl font-medium font-serif text-[--color-text] mb-2">Sélectionnez une conversation</h2>
+              <h2 className="text-xl font-medium font-serif text-[--color-text] mb-2">
+                Sélectionnez une conversation
+              </h2>
               <p className="text-sm text-[--color-text-secondary] max-w-sm">
                 Retrouvez ici tous les échanges avec vos prospects. L'IA classifie automatiquement l'intention des réponses.
               </p>

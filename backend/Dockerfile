@@ -8,10 +8,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Install pip dependencies
-COPY pyproject.toml .
-RUN pip install --no-cache-dir -e ".[dev]"
-
-# Copy application code (overridden by volume mount in dev)
 COPY . .
+RUN pip install --no-cache-dir .
 
 EXPOSE 8000

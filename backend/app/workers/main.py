@@ -4,6 +4,7 @@ from arq.connections import RedisSettings
 
 from app.config import settings
 from app.workers.import_tasks import import_leads_task
+from app.workers.inbox_tasks import sync_gmail_inbox
 
 
 async def startup(ctx: dict) -> None:
@@ -18,6 +19,7 @@ async def shutdown(ctx: dict) -> None:
 class WorkerSettings:
     functions = [
         import_leads_task,
+        sync_gmail_inbox,
     ]
     redis_settings = RedisSettings.from_dsn(settings.redis_url)
     max_jobs = 10

@@ -115,40 +115,44 @@ async def _search_leads(
 ) -> dict:
     from sqlalchemy import or_, select
     from app.leads.models import Lead
+    from app.contacts.models import Contact
+    from app.companies.models import Company
 
     query_str = params.get("query", "")
     limit = min(int(params.get("limit", 10)), 25)
     pattern = f"%{query_str}%"
 
     result = await db.execute(
-        select(Lead)
+        select(Lead, Contact, Company)
+        .outerjoin(Contact, Lead.contact_id == Contact.id)
+        .outerjoin(Company, Lead.company_id == Company.id)
         .where(
             Lead.workspace_id == workspace_id,
             Lead.deleted_at.is_(None),
             or_(
-                Lead.email.ilike(pattern),
-                Lead.first_name.ilike(pattern),
-                Lead.last_name.ilike(pattern),
-                Lead.company.ilike(pattern),
+                Contact.email.ilike(pattern),
+                Contact.first_name.ilike(pattern),
+                Contact.last_name.ilike(pattern),
+                Company.name.ilike(pattern),
             ),
         )
         .limit(limit)
     )
-    leads = result.scalars().all()
+    rows = result.all()
 
     return {
-        "total": len(leads),
+        "total": len(rows),
         "leads": [
             {
-                "id": str(l.id),
-                "name": f"{l.first_name or ''} {l.last_name or ''}".strip(),
-                "email": l.email,
-                "company": l.company,
-                "score": l.score,
-                "status": l.status.value if l.status else None,
-                "temperature": l.temperature.value if l.temperature else None,
+                "id": str(lead.id),
+                "name": contact.full_name if contact else "",
+                "email": contact.email if contact else None,
+                "company": company.name if company else None,
+                "score": lead.score,
+                "status": lead.status.value if lead.status else None,
+                "temperature": lead.temperature.value if lead.temperature else None,
             }
-            for l in leads
+            for lead, contact, company in rows
         ],
     }
 
