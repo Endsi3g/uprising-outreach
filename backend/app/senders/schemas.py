@@ -35,6 +35,11 @@ class DNSStatusResponse(BaseModel):
     all_valid: bool
 
 
+class OAuthAuthorizeResponse(BaseModel):
+    authorization_url: str
+    provider: EmailProvider
+
+
 class SenderResponse(BaseModel):
     id: uuid.UUID
     workspace_id: uuid.UUID

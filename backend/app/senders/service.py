@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.senders.dns_checker import DNSCheckResult, check_domain
-from app.senders.models import SenderAccount, SenderStatus
+from app.senders.models import EmailProvider, SenderAccount, SenderStatus
 from app.senders.schemas import SenderCreate, SenderUpdate
 from app.shared.exceptions import raise_not_found
 
@@ -88,3 +88,47 @@ async def delete_sender(
     sender = await get_sender(db, workspace_id, sender_id)
     sender.deleted_at = datetime.now(UTC)
     await db.commit()
+
+
+async def upsert_oauth_sender(
+    db: AsyncSession,
+    workspace_id: uuid.UUID,
+    provider: EmailProvider,
+    token_data: dict,
+) -> SenderAccount:
+    """Create or update a SenderAccount after a successful OAuth callback.
+
+    ``token_data`` must contain: email, access_token, refresh_token,
+    token_expiry, scopes.
+    """
+    email: str = token_data["email"]
+
+    # Look for an existing (non-deleted) sender with the same email in this workspace
+    result = await db.execute(
+        select(SenderAccount).where(
+            SenderAccount.workspace_id == workspace_id,
+            SenderAccount.email_address == email,
+            SenderAccount.deleted_at.is_(None),
+        )
+    )
+    sender = result.scalar_one_or_none()
+
+    if sender is None:
+        sender = SenderAccount(
+            workspace_id=workspace_id,
+            email_address=email,
+            display_name=email,
+            provider=provider,
+        )
+        db.add(sender)
+
+    sender.oauth_access_token = token_data["access_token"]
+    sender.oauth_refresh_token = token_data.get("refresh_token")
+    sender.oauth_token_expires_at = token_data.get("token_expiry")
+    sender.oauth_scopes = token_data.get("scopes")
+    sender.status = SenderStatus.ACTIVE
+    sender.provider = provider
+
+    await db.commit()
+    await db.refresh(sender)
+    return sender

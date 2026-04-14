@@ -17,7 +17,7 @@ ProspectOS relies on several environment variables. You must copy `.env.example`
 - `OUTLOOK_CLIENT_ID` / `OUTLOOK_CLIENT_SECRET`: OAuth2 keys from Azure AD. Required for Microsoft accounts.
 
 ### External APIs
-- `ANTHROPIC_API_KEY`: Required for the core Claude engine (generating messages, audits, classification).
+- `ANTHROPIC_API_KEY`: Required for the core ProspectOS AI engine (generating messages, audits, classification).
 - `SUPABASE_KEY` & `SUPABASE_URL`: Required if using Supabase for your backend operations.
 
 ## Default Policies

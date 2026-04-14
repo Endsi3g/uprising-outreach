@@ -30,9 +30,9 @@ export default function CustomizePage() {
           <path d="M12 16v4" />
         </svg>
       </motion.div>
-      <h1 className="text-2xl font-serif mb-2">Personnaliser Claude</h1>
+      <h1 className="text-2xl font-serif mb-2">Personnaliser ProspectOS</h1>
       <p className="text-sm text-[--color-text-tertiary] max-w-md mb-12">
-        Les compétences, connecteurs et plugins façonnent la manière dont Claude travaille avec vous.
+        Les compétences, connecteurs et plugins façonnent la manière dont ProspectOS travaille avec vous.
       </p>
 
       <div className="space-y-4 w-full max-w-md">
@@ -43,7 +43,7 @@ export default function CustomizePage() {
           <div className="w-10 h-10 rounded-lg bg-[--color-surface-2] flex items-center justify-center text-xl">🔗</div>
           <div>
             <p className="text-sm font-semibold">Connectez vos applications</p>
-            <p className="text-xs text-[--color-text-tertiary]">Permettez à Claude de lire et d'écrire dans les outils que vous utilisez déjà.</p>
+            <p className="text-xs text-[--color-text-tertiary]">Permettez à ProspectOS de lire et d'écrire dans les outils que vous utilisez déjà.</p>
           </div>
         </button>
         <button 
@@ -53,7 +53,7 @@ export default function CustomizePage() {
           <div className="w-10 h-10 rounded-lg bg-[--color-surface-2] flex items-center justify-center text-xl">🛠️</div>
           <div>
             <p className="text-sm font-semibold">Créer de nouvelles compétences</p>
-            <p className="text-xs text-[--color-text-tertiary]">Apprenez à Claude vos processus, normes d'équipe et expertise.</p>
+            <p className="text-xs text-[--color-text-tertiary]">Apprenez à ProspectOS vos processus, normes d'équipe et expertise.</p>
           </div>
         </button>
       </div>
@@ -283,13 +283,13 @@ function ConnectorDetails({ connector, onUpdate }: { connector: Connector, onUpd
         </div>
       </div>
       <p className="text-sm text-[--color-text-secondary] mb-12 max-w-2xl leading-relaxed">
-        Application officielle permettant de connecter vos données avec Claude.
+        Application officielle permettant de connecter vos données avec ProspectOS.
       </p>
 
       <div className="space-y-8">
          <section>
             <h3 className="text-sm font-bold mb-1">Autorisations des outils</h3>
-            <p className="text-xs text-[--color-text-tertiary] mb-6">Choisissez quand Claude est autorisé à utiliser ces outils.</p>
+            <p className="text-xs text-[--color-text-tertiary] mb-6">Choisissez quand ProspectOS est autorisé à utiliser ces outils.</p>
             
             <div className="space-y-4">
                <div className="flex items-center justify-between p-4 rounded-xl bg-[--color-surface] border border-[--color-border]">

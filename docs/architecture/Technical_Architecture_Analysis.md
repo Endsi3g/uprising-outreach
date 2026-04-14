@@ -1,12 +1,12 @@
-# Analyse Détaillée de Claude Code d'Anthropic
+# Analyse Détaillée de l'Agent ProspectOS
 
 ## Introduction
-Claude Code représente une avancée majeure dans les outils de développement assistés par IA. Contrairement aux assistants de code traditionnels qui se contentent de suggérer des lignes de code, Claude Code est un **agent autonome** capable de naviguer dans une base de code, d'exécuter des commandes, de tester ses propres modifications et de corriger ses erreurs.
+L'Agent ProspectOS représente une avancée majeure dans les outils de développement assistés par IA. Contrairement aux assistants de code traditionnels qui se contentent de suggérer des lignes de code, l'Agent ProspectOS est un **agent autonome** capable de naviguer dans une base de code, d'exécuter des commandes, de tester ses propres modifications et de corriger ses erreurs.
 
 ---
 
 ## 1. Analyse UI/UX : La Puissance de la Simplicité
-L'interface de Claude Code privilégie l'efficacité et l'intégration directe dans le flux de travail du développeur.
+L'interface de l'Agent ProspectOS privilégie l'efficacité et l'intégration directe dans le flux de travail du développeur.
 
 ### Interface Terminal (CLI)
 L'expérience utilisateur principale se déroule dans le terminal. C'est un choix stratégique qui place l'outil là où les développeurs passent le plus clair de leur temps.
@@ -15,7 +15,7 @@ L'expérience utilisateur principale se déroule dans le terminal. C'est un choi
 - **Interactivité :** Possibilité d'interrompre l'agent à tout moment avec `Ctrl+C` pour réorienter sa tâche.
 
 ### Intégration IDE (VS Code / JetBrains)
-Bien que né dans le terminal, Claude Code s'étend aux IDE via des extensions qui offrent :
+Bien que né dans le terminal, l'Agent ProspectOS s'étend aux IDE via des extensions qui offrent :
 - **Vue Contextuelle :** Affichage des plans d'action de l'agent à côté du code.
 - **Diffs Interactifs :** Visualisation claire des changements proposés avant application.
 
@@ -24,12 +24,12 @@ Bien que né dans le terminal, Claude Code s'étend aux IDE via des extensions q
 ---
 
 ## 2. La "Vibe Agentique" : Autonomie et Proactivité
-La "vibe agentique" de Claude Code se définit par sa capacité à ne pas simplement répondre à des questions, mais à **accomplir des missions**.
+La "vibe agentique" de l'Agent ProspectOS se définit par sa capacité à ne pas simplement répondre à des questions, mais à **accomplir des missions**.
 
 ### Caractéristiques de l'Agent
 | Caractéristique | Description |
 | :--- | :--- |
-| **Proactivité** | Claude Code n'attend pas des instructions étape par étape. Il explore le projet pour comprendre le contexte par lui-même. |
+| **Proactivité** | L'Agent ProspectOS n'attend pas des instructions étape par étape. Il explore le projet pour comprendre le contexte par lui-même. |
 | **Auto-Correction** | Si une commande échoue ou qu'un test ne passe pas, l'agent analyse l'erreur et tente une nouvelle approche sans intervention humaine. |
 | **Gestion du Contexte** | Utilisation intelligente de fichiers comme `CLAUDE.md` pour mémoriser les conventions du projet et les préférences du développeur. |
 | **Transparence** | L'agent expose son "plan" avant de l'exécuter, créant un sentiment de collaboration plutôt que de boîte noire. |
@@ -37,12 +37,12 @@ La "vibe agentique" de Claude Code se définit par sa capacité à ne pas simple
 ---
 
 ## 3. Fonctionnement Technique : La Boucle Agentique
-Le fonctionnement de Claude Code repose sur une boucle itérative en trois phases : **Collecte de Contexte**, **Action**, et **Vérification**.
+Le fonctionnement de l'Agent ProspectOS repose sur une boucle itérative en trois phases : **Collecte de Contexte**, **Action**, et **Vérification**.
 
 ### La Boucle en Détail
 1. **Collecte de Contexte :** L'agent utilise des outils de recherche (`grep`, `ls`, `read_file`) pour comprendre la structure et la logique existante.
 2. **Action :** Il propose et applique des modifications via des outils d'édition de fichiers ou l'exécution de scripts.
-3. **Vérification :** C'est l'étape cruciale. Claude Code exécute des tests unitaires ou des linters pour valider ses changements. S'il détecte une régression, il retourne à l'étape 1.
+3. **Vérification :** C'est l'étape cruciale. L'Agent ProspectOS exécute des tests unitaires ou des linters pour valider ses changements. S'il détecte une régression, il retourne à l'étape 1.
 
 ![Boucle Agentique](https://private-us-east-1.manuscdn.com/sessionFile/LWwCakZzcgjpbbSaNJnv3g/sandbox/flMWOikoQ8pJeAaifbQPr9-images_1776102839305_na1fn_L2hvbWUvdWJ1bnR1L2NsYXVkZV9jb2RlX2FuYWx5c2lzL2ltYWdlcy9hZ2VudGljX2xvb3A.jpg?Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly9wcml2YXRlLXVzLWVhc3QtMS5tYW51c2Nkbi5jb20vc2Vzc2lvbkZpbGUvTFd3Q2FrWnpjZ2pwYmJTYU5KbnYzZy9zYW5kYm94L2ZsTVdPaWtvUThwSmVBYWlmYlFQcjktaW1hZ2VzXzE3NzYxMDI4MzkzMDVfbmExZm5fTDJodmJXVXZkV0oxYm5SMUwyTnNZWFZrWlY5amIyUmxYMkZ1WVd4NWMybHpMMmx0WVdkbGN5OWhaMlZ1ZEdsalgyeHZiM0EuanBnIiwiQ29uZGl0aW9uIjp7IkRhdGVMZXNzVGhhbiI6eyJBV1M6RXBvY2hUaW1lIjoxNzk4NzYxNjAwfX19XX0_&Key-Pair-Id=K2HSFNDJXOU9YS&Signature=rGwZYwd4GHfEtxzzMtl0VBGPivo985XoiSeV1e6nBUdj~k3eT~iM016JYK6eZ85XMDwzQeAVW-ksWC9KaEBYStAGNXq5vKdyWDs9F3KlNGMmjtxCVD6AQM33U4A693yb27Ys-eYATBCutw1yddriYceWpuq6mb9hrwyv2BtHwh3056lgVzbDHXDJ6ZSCmQ6UTYXXZLqVM2JWkjkYEWCJJBcadEFB0gPrLs4q1WB0Id2vnEz7Q4bckGJPNc4gUCTbvfNE13GYnU~rAosqE68uC403A-zmFLKRcyfZGg3mIcwJURDylg65G5FSDbsL-yX5kWlj~CK9ncneWMUulWjCrw__)
 
@@ -64,4 +64,4 @@ Pour construire un outil avec une "vibe" similaire, voici les piliers à respect
 ---
 
 ## Conclusion
-Claude Code ne se contente pas d'écrire du code ; il **gère le cycle de vie du développement**. Sa réussite réside dans l'équilibre parfait entre une autonomie impressionnante et une interface familière et transparente pour le développeur.
+L'Agent ProspectOS ne se contente pas d'écrire du code ; il **gère le cycle de vie du développement**. Sa réussite réside dans l'équilibre parfait entre une autonomie impressionnante et une interface familière et transparente pour le développeur.

@@ -39,7 +39,7 @@ You MUST return ONLY a valid JSON object with the following keys:
 
 async def score_lead_with_ai(lead_data: dict) -> Optional[ScoringResult]:
     """
-    Uses Anthropic Claude to score a lead based on ICP criteria.
+    Uses ProspectOS AI to score a lead based on ICP criteria.
     If no API key is present, returns a fallback mock score.
     """
     if not settings.anthropic_api_key:
@@ -65,7 +65,7 @@ async def score_lead_with_ai(lead_data: dict) -> Optional[ScoringResult]:
             ]
         )
         
-        # Claude 3 returns content as a list of content blocks
+        # The AI returns content as a list of content blocks
         text = response.content[0].text
         # Naive JSON extraction
         start = text.find("{")
@@ -73,9 +73,9 @@ async def score_lead_with_ai(lead_data: dict) -> Optional[ScoringResult]:
         if start != -1 and end != -1:
             return json.loads(text[start:end])
         
-        logger.error(f"Failed to parse Claude scoring response: {text}")
+        logger.error(f"Failed to parse AI scoring response: {text}")
         return None
         
     except Exception as e:
-        logger.error(f"Error calling Anthropic API for lead scoring: {str(e)}")
+        logger.error(f"Error calling AI API for lead scoring: {str(e)}")
         return None

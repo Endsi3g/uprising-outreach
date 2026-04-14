@@ -1,6 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to the ProspectOS Agent when working with code in this repository.
 
 ## Project Overview
 
@@ -10,10 +8,10 @@ The project is currently in a documentation/design phase. All specifications liv
 
 ## Documentation Map
 
-- `docs/prd-prospecting-app.md` — Master product requirements document (MVP scope, data model, feature specs, user roles)
-- `docs/DESIGN.md` — Complete design system (colors, typography, component patterns, layout principles)
-- `docs/claude-code-ui-ux-guide.md` — UI/UX interface replication guide
-- `docs/Analyse Détaillée de Claude Code d'Anthropic.md` — Technical architecture analysis
+- `docs/product/prd-prospecting-app.md` — Master product requirements document (MVP scope, data model, feature specs, user roles)
+- `docs/design/DESIGN.md` — Complete design system (colors, typography, component patterns, layout principles)
+- `docs/design/ui-ux-replication-guide.md` — UI/UX interface replication guide
+- `docs/architecture/Technical_Architecture_Analysis.md` — Technical architecture analysis
 
 ## Commands
 
@@ -49,7 +47,7 @@ make redis-cli                       # redis-cli
 
 - **Backend:** Python + FastAPI
 - **Database:** PostgreSQL (or Supabase)
-- **AI:** Claude API — personalization engine, lead scoring, website audit analysis, response classification
+- **AI:** ProspectOS AI — personalization engine, lead scoring, website audit analysis, response classification
 - **Email:** OAuth (Gmail/Outlook), SPF/DKIM/DMARC verification
 
 ## Core Architecture
@@ -82,7 +80,7 @@ Crawls a prospect's website and extracts digital maturity signals: form presence
 
 ## Design System (from `docs/DESIGN.md`)
 
-Aesthetic: warm, literary, premium — inspired by Claude/Anthropic's interface. Avoid generic SaaS aesthetics (gradients, glow effects, repetitive cards).
+Aesthetic: warm, literary, premium — inspired by the ProspectOS interface. Avoid generic SaaS aesthetics (gradients, glow effects, repetitive cards).
 
 **Color palette:**
 - Background: Parchment `#f5f4ed`

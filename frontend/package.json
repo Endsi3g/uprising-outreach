@@ -13,8 +13,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "format": "prettier --write src/",
+    "clean": "powershell -Command \"Remove-Item -LiteralPath 'out', '.next', 'dist' -Recurse -Force -ErrorAction SilentlyContinue\"",
     "dev:electron": "concurrently \"npm run dev\" \"wait-on http://localhost:3000 && electron .\"",
-    "build:electron": "next build && electron-builder"
+    "build:electron": "next build && electron-builder",
+    "build:electron:full": "npm run clean && $env:CSC_LINK=$null; $env:WIN_CSC_LINK=$null; npm run build:electron"
   },
   "build": {
     "appId": "com.uprising.prospectos",

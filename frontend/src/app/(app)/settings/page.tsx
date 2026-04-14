@@ -1,9 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/components/shared/ThemeProvider";
+import { apiClient } from "@/lib/api";
+import type { SenderAccount } from "@/types/campaigns";
 
 type SettingTab = 
   | "general" 
@@ -17,7 +20,11 @@ type SettingTab =
   | "claude_chrome";
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<SettingTab>("general");
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const initialTab: SettingTab =
+    tabParam === "Connecteurs" ? "connectors" : "general";
+  const [activeTab, setActiveTab] = useState<SettingTab>(initialTab);
 
   const TABS = [
     { key: "general" as const, label: "Général" },
@@ -60,8 +67,9 @@ export default function SettingsPage() {
       <main className="flex-1 overflow-y-auto custom-scrollbar px-12 py-12 max-w-4xl">
         <AnimatePresence mode="wait">
           {activeTab === "general" && <GeneralSettings key="general" />}
-          {activeTab !== "general" && (
-            <motion.div 
+          {activeTab === "connectors" && <ConnecteursSettings key="connectors" searchParams={searchParams} />}
+          {activeTab !== "general" && activeTab !== "connectors" && (
+            <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               className="py-20 text-center"
@@ -78,6 +86,191 @@ export default function SettingsPage() {
         </AnimatePresence>
       </main>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Connecteurs tab
+// ---------------------------------------------------------------------------
+
+const PROVIDER_META = {
+  gmail: { label: "Gmail", icon: "G", color: "#EA4335" },
+  outlook: { label: "Outlook", icon: "O", color: "#0078D4" },
+  smtp: { label: "SMTP", icon: "S", color: "#6B7280" },
+} as const;
+
+function ConnecteursSettings({ searchParams }: { searchParams: URLSearchParams }) {
+  const [senders, setSenders] = useState<SenderAccount[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [connecting, setConnecting] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; ok: boolean } | null>(null);
+
+  const oauthStatus = searchParams.get("status");
+  const oauthProvider = searchParams.get("provider");
+
+  useEffect(() => {
+    if (oauthStatus === "connected" && oauthProvider) {
+      const meta = PROVIDER_META[oauthProvider as keyof typeof PROVIDER_META];
+      setToast({ message: `${meta?.label ?? oauthProvider} connecté avec succès.`, ok: true });
+    } else if (oauthStatus === "error") {
+      setToast({ message: "La connexion a échoué. Veuillez réessayer.", ok: false });
+    }
+  }, [oauthStatus, oauthProvider]);
+
+  useEffect(() => {
+    apiClient
+      .get<SenderAccount[]>("/senders")
+      .then(setSenders)
+      .catch(() => setSenders([]))
+      .finally(() => setLoading(false));
+  }, [oauthStatus]);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 4000);
+    return () => clearTimeout(t);
+  }, [toast]);
+
+  async function connectProvider(provider: "gmail" | "outlook") {
+    setConnecting(provider);
+    try {
+      const { authorization_url } = await apiClient.get<{ authorization_url: string; provider: string }>(
+        `/senders/oauth/${provider}/authorize`
+      );
+      window.location.href = authorization_url;
+    } catch {
+      setToast({ message: "Impossible d'initier la connexion OAuth.", ok: false });
+      setConnecting(null);
+    }
+  }
+
+  const statusBadge = (status: SenderAccount["status"]) => {
+    const map = {
+      active: { label: "Actif", cls: "text-emerald-700 bg-emerald-50 border-emerald-200" },
+      pending: { label: "En attente", cls: "text-amber-700 bg-amber-50 border-amber-200" },
+      error: { label: "Erreur", cls: "text-red-700 bg-red-50 border-red-200" },
+      paused: { label: "Pausé", cls: "text-[--color-text-secondary] bg-[--color-surface] border-[--color-border]" },
+      disconnected: { label: "Déconnecté", cls: "text-[--color-text-tertiary] bg-[--color-surface] border-[--color-border]" },
+    };
+    const s = map[status] ?? map.pending;
+    return (
+      <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full border uppercase tracking-wider", s.cls)}>
+        {s.label}
+      </span>
+    );
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      className="space-y-10"
+    >
+      {/* Toast */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className={cn(
+              "fixed top-6 right-6 z-50 px-5 py-3 rounded-xl border text-sm font-medium shadow-md",
+              toast.ok
+                ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                : "bg-red-50 border-red-200 text-red-800"
+            )}
+          >
+            {toast.message}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div>
+        <h1 className="text-2xl font-serif mb-2">Connecteurs</h1>
+        <p className="text-sm text-[--color-text-secondary]">
+          Connectez vos boîtes mail pour envoyer et recevoir des messages depuis ProspectOS.
+        </p>
+      </div>
+
+      {/* Connected accounts */}
+      <section>
+        <p className="text-xs font-bold uppercase tracking-widest text-[--color-text-tertiary] mb-4">
+          Comptes connectés
+        </p>
+
+        {loading ? (
+          <div className="space-y-3">
+            {[1, 2].map((i) => (
+              <div key={i} className="h-16 rounded-xl bg-[--color-surface] border border-[--color-border] animate-pulse" />
+            ))}
+          </div>
+        ) : senders.length === 0 ? (
+          <div className="py-12 text-center rounded-xl border border-dashed border-[--color-border]">
+            <p className="text-sm text-[--color-text-tertiary]">Aucun compte connecté.</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {senders.map((sender) => {
+              const meta = PROVIDER_META[sender.provider] ?? PROVIDER_META.smtp;
+              return (
+                <div
+                  key={sender.id}
+                  className="flex items-center gap-4 px-5 py-4 rounded-xl border border-[--color-border] bg-[--color-surface]"
+                >
+                  <div
+                    className="w-9 h-9 rounded-lg flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
+                    style={{ backgroundColor: meta.color }}
+                  >
+                    {meta.icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{sender.email_address}</p>
+                    <p className="text-xs text-[--color-text-tertiary]">{meta.label} · {sender.daily_send_limit} emails/jour</p>
+                  </div>
+                  {statusBadge(sender.status)}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* Add provider */}
+      <section>
+        <p className="text-xs font-bold uppercase tracking-widest text-[--color-text-tertiary] mb-4">
+          Ajouter un compte
+        </p>
+        <div className="grid grid-cols-2 gap-4">
+          {(["gmail", "outlook"] as const).map((provider) => {
+            const meta = PROVIDER_META[provider];
+            const busy = connecting === provider;
+            return (
+              <button
+                key={provider}
+                onClick={() => connectProvider(provider)}
+                disabled={!!connecting}
+                className={cn(
+                  "flex items-center gap-4 px-5 py-4 rounded-xl border-2 transition-all text-left",
+                  "border-[--color-border] bg-[--color-surface] hover:border-[--color-border-warm] hover:bg-[--color-surface-2]",
+                  busy && "opacity-60 cursor-not-allowed"
+                )}
+              >
+                <div
+                  className="w-9 h-9 rounded-lg flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
+                  style={{ backgroundColor: meta.color }}
+                >
+                  {meta.icon}
+                </div>
+                <div>
+                  <p className="text-sm font-medium">{busy ? "Connexion…" : `Connecter ${meta.label}`}</p>
+                  <p className="text-xs text-[--color-text-tertiary]">OAuth 2.0</p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+    </motion.div>
   );
 }
 

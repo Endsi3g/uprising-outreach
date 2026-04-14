@@ -18,7 +18,7 @@ export default function DownloadPage() {
           animate={{ opacity: 1, y: 0 }}
           className="text-3xl font-serif font-medium"
         >
-          Faites plus avec Claude, partout où vous travaillez.
+          Faites plus avec ProspectOS, partout où vous travaillez.
         </motion.h1>
 
         {/* Main Desktop Card */}
@@ -31,7 +31,7 @@ export default function DownloadPage() {
           <div className="max-w-md relative z-10">
             <h2 className="text-xl font-medium mb-4">Bureau</h2>
             <p className="text-sm text-gray-400 leading-relaxed mb-8">
-              Chattez, collaborez et codez dans une seule application. Claude fonctionne avec vos fichiers, applications et onglets de navigateur.
+              Chattez, collaborez et codez dans une seule application. ProspectOS fonctionne avec vos fichiers, applications et onglets de navigateur.
             </p>
             <Button 
                 variant="primary" 
@@ -73,7 +73,7 @@ export default function DownloadPage() {
             transition={{ delay: 0.2 }}
             className="rounded-[32px] bg-[#1e1e1c] border border-white/5 p-8 text-left h-full"
           >
-            <h3 className="text-lg font-medium mb-3">Claude Code</h3>
+            <h3 className="text-lg font-medium mb-3">Agent ProspectOS</h3>
             <p className="text-xs text-gray-500 leading-relaxed mb-8">
               Créez, déboguez et déployez depuis votre terminal ou IDE.
             </p>
@@ -102,7 +102,7 @@ export default function DownloadPage() {
           >
             <h3 className="text-lg font-medium mb-3">Mobile</h3>
             <p className="text-xs text-gray-500 leading-relaxed mb-8">
-              Discutez en mains libres, connectez Claude à vos applications préférées et lancez des tâches en déplacement.
+              Discutez en mains libres, connectez ProspectOS à vos applications préférées et lancez des tâches en déplacement.
             </p>
             
             <div className="space-y-3 mb-8">
