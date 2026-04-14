@@ -1,6 +1,7 @@
-const CLAUDE_API_KEY = "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";
-const CLAUDE_VERSION = "2023-06-01";
-const CLAUDE_MODEL = "claude-3-haiku-20240307";
+// ProspectOS Sidepanel Logic
+// Connects to the main ProspectOS Backend for Intelligence
+
+const API_BASE_URL = "http://localhost:8000/api/v1";
 
 const chatHistory = document.getElementById('chat-history');
 const userInput = document.getElementById('user-input');
@@ -11,36 +12,30 @@ let messages = [];
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
-    addMessage("assistant", "Bonjour ! Je suis ProspectOS. Comment puis-je vous aider à prospecter sur cette page ?");
+    addMessage("assistant", "Bonjour ! Je suis l'assistant ProspectOS. Je peux analyser cette page ou répondre à vos questions sur vos leads.");
 });
 
-async function callClaude(messages) {
+async function callProspectOS(input) {
     try {
-        const response = await fetch("https://api.anthropic.com/messages", {
+        const response = await fetch(`${API_BASE_URL}/ai/secretary`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "x-api-key": CLAUDE_API_KEY,
-                "anthropic-version": CLAUDE_VERSION,
-                "dangerously-allow-browser": "true" // Note: Chrome extensions are generally safer but Anthropic SDK usually requires this
             },
             body: JSON.stringify({
-                model: CLAUDE_MODEL,
-                max_tokens: 1024,
-                messages: messages
+                user_input: input
             })
         });
 
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.error?.message || "Erreur API");
+            throw new Error("Impossible de contacter le serveur ProspectOS. Assurez-vous que l'application est lancée.");
         }
 
         const data = await response.json();
-        return data.content[0].text;
+        return data.response_prefix;
     } catch (error) {
-        console.error("Claude API Error:", error);
-        return "Désolé, j'ai rencontré une erreur lors de la connexion à l'intelligence ProspectOS.";
+        console.error("Backend Error:", error);
+        return "Erreur: Connexion au serveur ProspectOS échouée. Veuillez vérifier que le backend est actif.";
     }
 }
 
@@ -48,14 +43,25 @@ function addMessage(role, content) {
     const msgDiv = document.createElement('div');
     msgDiv.className = `message ${role}`;
     
+    // Smooth fade in
+    msgDiv.style.opacity = "0";
+    msgDiv.style.transform = "translateY(10px)";
+    msgDiv.style.transition = "all 0.3s ease";
+
     const inner = document.createElement('div');
     inner.className = 'message-inner';
     inner.textContent = content;
     
     msgDiv.appendChild(inner);
     chatHistory.appendChild(msgDiv);
-    chatHistory.scrollTop = chatHistory.scrollHeight;
     
+    // Trigger animation
+    setTimeout(() => {
+        msgDiv.style.opacity = "1";
+        msgDiv.style.transform = "translateY(0)";
+    }, 10);
+
+    chatHistory.scrollTop = chatHistory.scrollHeight;
     messages.push({ role, content });
 }
 
@@ -64,17 +70,23 @@ async function handleSend() {
     if (!text) return;
 
     userInput.value = "";
+    userInput.style.height = "40px";
     addMessage("user", text);
 
-    // Filter to role: user/assistant only for API
-    const apiMessages = messages.filter(m => m.role === 'user' || m.role === 'assistant');
+    const loadingDiv = document.createElement('div');
+    loadingDiv.className = 'message assistant loading';
+    loadingDiv.innerHTML = '<div class="message-inner">Réflexion...</div>';
+    chatHistory.appendChild(loadingDiv);
+    chatHistory.scrollTop = chatHistory.scrollHeight;
 
-    const response = await callClaude(apiMessages);
+    const response = await callProspectOS(text);
+    
+    chatHistory.removeChild(loadingDiv);
     addMessage("assistant", response);
 }
 
 async function analyzePage() {
-    addMessage("assistant", "Analyse de la page en cours...");
+    addMessage("assistant", "Analyse des signaux de la page en cours...");
     
     try {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -84,24 +96,26 @@ async function analyzePage() {
             func: () => {
                 return {
                     title: document.title,
-                    text: document.body.innerText.substring(0, 5000) // Truncate to avoid token limits
+                    url: window.location.href,
+                    text: document.body.innerText.substring(0, 3000)
                 };
             }
         });
 
         const pageContent = results[0].result;
-        const prompt = `Voici le contenu de la page web actuelle :
+        const prompt = `Analyse cette page pour la prospection :
+URL: ${pageContent.url}
 Titre: ${pageContent.title}
 Contenu: ${pageContent.text}
 
-Analyse brièvement cette page et propose 3 angles d'approche pour la prospection commerciale.`;
+Donne moi 3 insights clés pour approcher ce prospect.`;
 
-        const response = await callClaude([{ role: "user", content: prompt }]);
+        const response = await callProspectOS(prompt);
         addMessage("assistant", response);
 
     } catch (error) {
         console.error("Analysis Error:", error);
-        addMessage("assistant", "Impossible de lire le contenu de la page. Assurez-vous d'être sur une page web valide.");
+        addMessage("assistant", "Erreur lors de la capture de la page. Vérifiez les permissions de l'extension.");
     }
 }
 
@@ -111,6 +125,11 @@ userInput.addEventListener('keydown', (e) => {
         e.preventDefault();
         handleSend();
     }
+    // Auto-resize
+    setTimeout(() => {
+        userInput.style.height = 'auto';
+        userInput.style.height = (userInput.scrollHeight) + 'px';
+    }, 0);
 });
 
 if (analyzeButton) {

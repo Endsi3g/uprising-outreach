@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>ProspectOS - Options</title>
+  <style>
+    :root {
+      --color-parchment: #f5f4ed;
+      --color-ivory: #faf9f5;
+      --color-terracotta: #c96442;
+      --color-near-black: #141413;
+      --color-olive-gray: #5e5d59;
+      --color-cream: #f0eee6;
+      --color-warm-ring: #d1cfc5;
+    }
+    body {
+      font-family: "Inter", system-ui, sans-serif;
+      background: var(--color-parchment);
+      color: var(--color-near-black);
+      margin: 0;
+      padding: 40px;
+      line-height: 1.6;
+    }
+    h1 {
+      font-family: "Georgia", serif;
+      font-weight: 500;
+      color: var(--color-near-black);
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: var(--color-ivory);
+      padding: 30px;
+      border-radius: 16px;
+      border: 1px solid var(--color-cream);
+      box-shadow: rgba(0,0,0,0.02) 0px 4px 12px;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--color-warm-ring);
+      border-radius: 8px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    button {
+      background: var(--color-terracotta);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    button:hover {
+      opacity: 0.9;
+    }
+    #status {
+      margin-top: 15px;
+      color: #3898ec;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Paramètres ProspectOS</h1>
+    <div class="form-group">
+      <label for="apiUrl">URL de l'API (Backend)</label>
+      <input type="text" id="apiUrl" placeholder="http://localhost:8000/api/v1">
+    </div>
+    <button id="saveBtn">Enregistrer</button>
+    <div id="status"></div>
+  </div>
+  <script src="options.js"></script>
+</body>
+</html>

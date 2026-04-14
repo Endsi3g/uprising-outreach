@@ -1,12 +1,9 @@
-"use client";
-
 import { useEffect, useRef, useCallback, useTransition, useState } from "react";
 import { cn } from "@/lib/utils";
 import {
     LayoutGrid,
     CircleUserRound,
     ArrowUpIcon,
-    Paperclip,
     PlusIcon,
     SendIcon,
     XIcon,
@@ -21,10 +18,13 @@ import {
     Calendar,
     PenTool as Pen,
     Paperclip as Clip,
+    Square
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import * as React from "react"
 import { apiClient } from "@/lib/api";
+import { useChatStore, Message } from "@/store/chat";
+import gsap from "gsap";
 
 interface UseAutoResizeTextareaProps {
     minHeight: number;
@@ -101,9 +101,9 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
       )}>
         <textarea
           className={cn(
-            "flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm",
+            "flex min-h-[40px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-base",
             "transition-all duration-200 ease-in-out",
-            "placeholder:text-muted-foreground",
+            "placeholder:text-[--color-text-tertiary]",
             "disabled:cursor-not-allowed disabled:opacity-50",
             showRing ? "focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0" : "",
             className
@@ -116,7 +116,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
         
         {showRing && isFocused && (
           <motion.span 
-            className="absolute inset-0 rounded-md pointer-events-none ring-2 ring-offset-0 ring-violet-500/30"
+            className="absolute inset-0 rounded-md pointer-events-none ring-2 ring-offset-0 ring-[--color-cta]/30"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -133,36 +133,107 @@ function Spinner({ size = 16 }: { size?: number }) {
     return <LoaderIcon className="animate-spin" style={{ width: size, height: size }} />;
 }
 
-function CommandChip({ icon, label, color }: { icon: React.ReactNode, label: string, color?: string }) {
+function CommandChip({ icon, label, isActive }: { icon: React.ReactNode, label: string, isActive?: boolean }) {
     return (
-        <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[--color-surface-2]/40 hover:bg-[--color-surface-2]/60 border border-[--color-border-subtle] text-[12px] font-medium text-[--color-text-secondary] transition-all">
-            {color ? <span className={cn("w-1.5 h-1.5 rounded-full", color)} /> : <span className="opacity-70">{icon}</span>}
+        <button className={cn(
+            "flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all text-[11px] font-medium",
+            isActive 
+                ? "bg-[--color-cta] text-white border-[--color-cta] shadow-sm" 
+                : "bg-[--color-surface-2]/50 hover:bg-[--color-surface-2] border-[--color-border-subtle] text-[--color-text-secondary]"
+        )}>
+            <span className={cn("opacity-80", isActive ? "text-white" : "")}>{icon}</span>
             {label}
         </button>
     );
 }
 
+function ChatWaveform({ isActive }: { isActive: boolean }) {
+    return (
+        <div className="flex items-center gap-0.5 px-2">
+            {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+                <motion.div
+                    key={i}
+                    animate={{
+                        height: isActive 
+                            ? [8, 16, 12, 20, 10, 14, 8][i % 7] 
+                            : 4
+                    }}
+                    transition={{
+                        repeat: Infinity,
+                        duration: 0.8,
+                        delay: i * 0.1,
+                        ease: "easeInOut"
+                    }}
+                    className={cn(
+                        "w-0.5 rounded-full",
+                        isActive ? "bg-[--color-cta]" : "bg-[--color-text-tertiary]/30"
+                    )}
+                />
+            ))}
+        </div>
+    );
+}
+
 export function AnimatedAIChat() {
+    const { 
+        sessions, 
+        activeSessionId, 
+        addSession, 
+        addMessage, 
+        setActiveSession,
+        getActiveSession,
+        clearHistory
+    } = useChatStore();
+
     const [value, setValue] = useState("");
-    const [attachments, setAttachments] = useState<string[]>([]);
     const [isTyping, setIsTyping] = useState(false);
     const [isThinking, setIsThinking] = useState(false);
-    const [messages, setMessages] = useState<{ role: string, content: string }[]>([]);
+    const [isVoiceActive, setIsVoiceActive] = useState(false);
     const [activeSuggestion, setActiveSuggestion] = useState<number>(-1);
     const [showCommandPalette, setShowCommandPalette] = useState(false);
-    const [recentCommand, setRecentCommand] = useState<string | null>(null);
+    const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
+    
     const { textareaRef, adjustHeight } = useAutoResizeTextarea({
-        minHeight: 60,
+        minHeight: 40,
         maxHeight: 200,
     });
-    const [inputFocused, setInputFocused] = useState(false);
-    const [selectedModel, setSelectedModel] = useState("Sonnet 4.6");
-    const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
+    
+    const containerRef = useRef<HTMLDivElement>(null);
+    const messagesRef = useRef<HTMLDivElement>(null);
     const commandPaletteRef = useRef<HTMLDivElement>(null);
     const modelDropdownRef = useRef<HTMLDivElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
+    const activeSession = getActiveSession();
+    const messages = activeSession?.messages || [];
     const models = ["Sonnet 4.6", "Haiku 4.1", "Opus 4.5", "GPT-4o", "O1-preview"];
+
+    // GSAP Staggered Entrance
+    useEffect(() => {
+        if (messagesRef.current && messages.length > 0) {
+            gsap.fromTo(
+                messagesRef.current.children,
+                { opacity: 0, y: 15 },
+                { 
+                    opacity: 1, 
+                    y: 0, 
+                    duration: 0.4, 
+                    stagger: 0.08, 
+                    ease: "power2.out",
+                    overwrite: "auto"
+                }
+            );
+        }
+    }, [messages.length === 1]); // Only stagger on first load or brand new conversation
+
+    // Ensure we have a session on mount
+    useEffect(() => {
+        if (!activeSessionId && sessions.length === 0) {
+            addSession();
+        } else if (!activeSessionId && sessions.length > 0) {
+            setActiveSession(sessions[0].id);
+        }
+    }, []);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -171,23 +242,6 @@ export function AnimatedAIChat() {
     useEffect(() => {
         scrollToBottom();
     }, [messages, isTyping, isThinking]);
-
-    useEffect(() => {
-        const saved = localStorage.getItem("prospectos_chat_history");
-        if (saved) {
-            try {
-                setMessages(JSON.parse(saved));
-            } catch (e) {
-                console.error("Failed to parse chat history", e);
-            }
-        }
-    }, []);
-
-    useEffect(() => {
-        if (messages.length > 0) {
-            localStorage.setItem("prospectos_chat_history", JSON.stringify(messages));
-        }
-    }, [messages]);
 
     const commandSuggestions: CommandSuggestion[] = [
         { 
@@ -238,12 +292,6 @@ export function AnimatedAIChat() {
             description: "Draft a personalized email", 
             prefix: "/draft" 
         },
-        { 
-            icon: <Paperclip className="w-4 h-4" />, 
-            label: "Capture", 
-            description: "Capture lead from LinkedIn URL", 
-            prefix: "/capture" 
-        },
     ];
 
     useEffect(() => {
@@ -259,9 +307,11 @@ export function AnimatedAIChat() {
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             const target = event.target as Node;
-            const commandButton = document.querySelector('[data-command-button]');
-            if (commandPaletteRef.current && !commandPaletteRef.current.contains(target) && !commandButton?.contains(target)) {
+            if (commandPaletteRef.current && !commandPaletteRef.current.contains(target)) {
                 setShowCommandPalette(false);
+            }
+            if (modelDropdownRef.current && !modelDropdownRef.current.contains(target)) {
+                setIsModelDropdownOpen(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -283,139 +333,137 @@ export function AnimatedAIChat() {
     };
 
     const handleSendMessage = async () => {
-        if (value.trim() && !isThinking && !isTyping) {
+        if (value.trim() && !isThinking && !isTyping && activeSessionId) {
             const userContent = value.trim();
             setValue("");
             adjustHeight(true);
-            setMessages(prev => [...prev, { role: "user", content: userContent }]);
+            
+            addMessage(activeSessionId, { role: "user", content: userContent });
             setIsThinking(true);
+            
             try {
                 const response = await apiClient.post<{suggested_action: string, response_prefix: string}>("/ai/secretary", { user_input: userContent });
                 setIsThinking(false);
                 setIsTyping(true);
-                const aiResponse = response.response_prefix || "Analyse terminée. Comment puis-je vous aider ?";
+                
+                const aiResponse = response.response_prefix || "Analyse terminée.";
                 let currentText = "";
-                setMessages(prev => [...prev, { role: "assistant", content: "" }]);
+                
+                // Add empty AI message
+                addMessage(activeSessionId, { role: "assistant", content: "" });
+                
+                // Simulate typing
                 for (let i = 0; i < aiResponse.length; i++) {
                     currentText += aiResponse[i];
-                    setMessages(prev => {
-                        const next = [...prev];
-                        next[next.length - 1] = { role: "assistant", content: currentText };
-                        return next;
-                    });
-                    await new Promise(r => setTimeout(r, 8 + Math.random() * 8));
+                    useChatStore.setState((state) => ({
+                        sessions: state.sessions.map((s) => 
+                            s.id === activeSessionId 
+                                ? { ...s, messages: [...s.messages.slice(0, -1), { role: "assistant", content: currentText }] }
+                                : s
+                        ),
+                    }));
+                    await new Promise(r => setTimeout(r, 5 + Math.random() * 5));
                 }
+                
                 if (response.suggested_action) {
                     setTimeout(() => { window.location.href = response.suggested_action; }, 2000);
                 }
             } catch (error) {
                 console.error("NanoClaw Error:", error);
                 setIsThinking(false);
-                setMessages(prev => [...prev, { role: "assistant", content: "Désolé, une erreur est survenue lors de la connexion au backend." }]);
+                addMessage(activeSessionId, { role: "assistant", content: "Désolé, une erreur est survenue." });
             } finally {
                 setIsTyping(false);
             }
         }
     };
 
-    const handleAttachFile = () => {
-        const mockFileName = `file-${Math.floor(Math.random() * 1000)}.pdf`;
-        setAttachments(prev => [...prev, mockFileName]);
-    };
-
-    const removeAttachment = (index: number) => {
-        setAttachments(prev => prev.filter((_, i) => i !== index));
-    };
-    
     const selectCommandSuggestion = (index: number) => {
         const selectedCommand = commandSuggestions[index];
         setValue(selectedCommand.prefix + ' ');
         setShowCommandPalette(false);
-        setRecentCommand(selectedCommand.label);
-        setTimeout(() => setRecentCommand(null), 2000);
     };
 
     return (
-        <div className="flex flex-col w-full h-full items-center bg-transparent text-[--color-text] p-6 relative overflow-visible">
+        <div ref={containerRef} className="flex flex-col w-full h-full items-center bg-transparent text-[--color-text] p-6 relative perspective-container">
             <div className="w-full max-w-2xl mx-auto flex flex-col h-full relative">
                 <AnimatePresence mode="wait">
-                    {messages.length === 0 && (
+                    {messages.length === 0 && !isThinking && (
                         <motion.div 
                             key="greeting"
-                            initial={{ opacity: 0, y: 10 }}
+                            initial={{ opacity: 0, y: 15 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -10 }}
-                            className="text-center py-12 flex-shrink-0"
+                            className="text-center py-16 flex-shrink-0"
                         >
-                            <div className="flex items-center justify-center gap-2.5 mb-2">
-                                <span className="text-[--color-orange-vibrant] text-2xl">✺</span>
-                                <h1
-                                    className="text-4xl font-normal leading-tight"
-                                    style={{ fontFamily: "var(--font-serif)", color: "var(--color-text)" }}
-                                >
+                            <div className="flex items-center justify-center gap-3 mb-3">
+                                <span className="text-[--color-cta] text-3xl animate-float">✺</span>
+                                <h1 className="text-5xl font-normal tracking-tight" style={{ fontFamily: "var(--font-serif)" }}>
                                     Bon après-midi, Kael
                                 </h1>
                             </div>
-                            <p className="text-sm uppercase tracking-[0.1em] font-medium" style={{ color: "var(--color-text-tertiary)" }}>
-                                Comment puis-je accélérer votre prospection aujourd'hui ?
+                            <p className="text-sm uppercase tracking-[0.2em] font-medium opacity-60">
+                                Comment puis-je accélérer votre prospection ?
                             </p>
                         </motion.div>
                     )}
                 </AnimatePresence>
 
-                <div className="flex-1 overflow-y-auto custom-scrollbar px-1 py-4 space-y-6">
-                    <AnimatePresence initial={false}>
-                        {messages.map((msg, i) => (
-                            <motion.div
-                                key={i}
-                                initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                className={cn("flex flex-col gap-2", msg.role === "user" ? "items-end" : "items-start")}
-                            >
-                                <div className={cn(
-                                    "max-w-[85%] px-5 py-3.5 rounded-2xl text-[14px] leading-relaxed whitespace-pre-wrap transition-all",
-                                    msg.role === "user" 
-                                        ? "bg-[--color-surface] text-[--color-text] shadow-[0_0_0_1px_var(--color-border-subtle)]" 
-                                        : "bg-transparent text-[--color-text] border-l border-[--color-border-warm] pl-8"
-                                )}>
-                                    {msg.content}
-                                </div>
-                            </motion.div>
-                        ))}
-                    </AnimatePresence>
+                <div 
+                    ref={messagesRef}
+                    className="flex-1 overflow-y-auto custom-scrollbar px-1 py-6 space-y-8"
+                >
+                    {messages.map((msg, i) => (
+                        <div
+                            key={i}
+                            className={cn("flex flex-col gap-2", msg.role === "user" ? "items-end" : "items-start")}
+                        >
+                            <div className={cn(
+                                "max-w-[85%] px-6 py-4 rounded-2xl text-body leading-relaxed whitespace-pre-wrap transition-all",
+                                msg.role === "user" 
+                                    ? "bg-[--color-surface] text-[--color-text] shadow-ring-warm" 
+                                    : "bg-transparent text-[--color-text] border-l-2 border-[--color-border-warm] ml-2 pl-8 opacity-90"
+                            )}>
+                                {msg.content}
+                            </div>
+                        </div>
+                    ))}
                     {isThinking && (
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3 items-center text-xs text-[--color-text-tertiary] font-serif pl-6">
-                            <Spinner size={14} /> 
-                            <span>Réflexion en cours...</span>
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-4 items-center text-sm text-[--color-text-tertiary] font-serif pl-10">
+                            <Spinner size={16} /> 
+                            <span className="italic">Réflexion en cours...</span>
                         </motion.div>
                     )}
                     <div ref={messagesEndRef} />
                 </div>
 
-                <div className="mt-auto pt-4 flex-shrink-0">
-                    <motion.div className="relative backdrop-blur-2xl bg-[--color-surface] rounded-2xl border border-[--color-border] shadow-whisper" initial={{ scale: 0.98 }} animate={{ scale: 1 }}>
+                <div className="mt-auto pt-6 flex-shrink-0 w-full">
+                    <motion.div 
+                        className="relative glass-premium rounded-2xl shadow-whisper weightless-lift border border-[--color-border-subtle]"
+                        layoutId="composer"
+                    >
                         <AnimatePresence>
                             {showCommandPalette && (
                                 <motion.div 
                                     ref={commandPaletteRef}
-                                    className="absolute left-4 right-4 bottom-full mb-2 backdrop-blur-xl bg-[--color-surface] rounded-lg z-50 shadow-lg border border-[--color-border] overflow-hidden"
-                                    initial={{ opacity: 0, y: 5 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: 5 }}
+                                    className="absolute left-2 right-2 bottom-full mb-3 glass-premium rounded-xl z-50 shadow-xl border border-[--color-border-subtle] overflow-hidden"
+                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
                                 >
-                                    <div className="py-1">
+                                    <div className="py-1.5 p-1">
                                         {commandSuggestions.map((suggestion, index) => (
                                             <div
                                                 key={suggestion.prefix}
                                                 className={cn(
-                                                    "flex items-center gap-2 px-3 py-2 text-xs transition-colors cursor-pointer",
-                                                    activeSuggestion === index ? "bg-[--color-surface-2] text-[--color-text]" : "text-[--color-text-secondary] hover:bg-[--color-surface-2]"
+                                                    "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition-all cursor-pointer",
+                                                    activeSuggestion === index ? "bg-[--color-cta] text-white" : "text-[--color-text-secondary] hover:bg-[--color-surface-2]"
                                                 )}
                                                 onClick={() => selectCommandSuggestion(index)}
                                             >
-                                                <div className="w-5 h-5 flex items-center justify-center text-[--color-text-tertiary]">{suggestion.icon}</div>
+                                                <div className={cn("w-5 h-5 flex items-center justify-center", activeSuggestion === index ? "text-white" : "text-[--color-text-tertiary]")}>{suggestion.icon}</div>
                                                 <div className="font-medium">{suggestion.label}</div>
-                                                <div className="text-[--color-text-tertiary] text-[10px] ml-1">{suggestion.prefix}</div>
+                                                <div className={cn("text-[10px] ml-auto opacity-60", activeSuggestion === index ? "text-white" : "")}>{suggestion.prefix}</div>
                                             </div>
                                         ))}
                                     </div>
@@ -423,9 +471,9 @@ export function AnimatedAIChat() {
                             )}
                         </AnimatePresence>
 
-                        <div className="p-4 flex flex-col gap-3">
-                            <div className="flex items-center gap-2">
-                                <button type="button" onClick={handleAttachFile} className="flex-shrink-0 p-2 text-[--color-text-tertiary] hover:text-[--color-orange-vibrant] hover:bg-[--color-orange-vibrant]/5 rounded-lg transition-all group">
+                        <div className="p-4 flex flex-col gap-4">
+                            <div className="flex items-start gap-3">
+                                <button type="button" className="flex-shrink-0 mt-2 p-1.5 text-[--color-text-tertiary] hover:text-[--color-cta] hover:bg-[--color-cta]/10 rounded-full transition-all">
                                     <PlusIcon className="w-5 h-5" />
                                 </button>
                                 <Textarea
@@ -433,42 +481,86 @@ export function AnimatedAIChat() {
                                     value={value}
                                     onChange={(e) => { setValue(e.target.value); adjustHeight(); }}
                                     onKeyDown={handleKeyDown}
-                                    onFocus={() => setInputFocused(true)}
-                                    onBlur={() => setInputFocused(false)}
-                                    placeholder="Posez une question à ProspectOS..."
+                                    placeholder="Interrogez ProspectOS..."
                                     containerClassName="flex-1"
-                                    className="w-full px-0 py-2 resize-none bg-transparent border-none text-[--color-text] text-base focus:outline-none placeholder:text-[--color-text-tertiary] min-h-[40px]"
+                                    className="w-full px-0 py-2 resize-none bg-transparent border-none text-[--color-text] text-lg focus:outline-none placeholder:text-[--color-text-tertiary] min-h-[44px]"
                                     style={{ overflow: "hidden" }}
                                     showRing={false}
                                 />
+                                
+                                <div className="flex items-center gap-3 mt-1.5">
+                                    <AnimatePresence mode="wait">
+                                        {!isVoiceActive ? (
+                                            <motion.button 
+                                                key="mic"
+                                                initial={{ opacity: 0, scale: 0.9 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                exit={{ opacity: 0, scale: 0.9 }}
+                                                onClick={() => setIsVoiceActive(true)}
+                                                className="p-2 text-[--color-text-tertiary] hover:text-[--color-cta] transition-colors"
+                                            >
+                                                <Mic className="w-5 h-5" />
+                                            </motion.button>
+                                        ) : (
+                                            <motion.button 
+                                                key="stop"
+                                                initial={{ opacity: 0, scale: 0.9 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                exit={{ opacity: 0, scale: 0.9 }}
+                                                onClick={() => setIsVoiceActive(false)}
+                                                className="flex items-center gap-3 p-1.5 bg-[--color-cta]/10 text-[--color-cta] rounded-full px-4"
+                                            >
+                                                <ChatWaveform isActive={true} />
+                                                <Square className="w-3 h-3 fill-current" />
+                                            </motion.button>
+                                        )}
+                                    </AnimatePresence>
+
+                                    <motion.button
+                                        type="button"
+                                        onClick={handleSendMessage}
+                                        disabled={isThinking || isTyping || !value.trim()}
+                                        className={cn(
+                                            "w-10 h-10 rounded-full flex items-center justify-center transition-all",
+                                            value.trim() && !isThinking ? "bg-[--color-cta] text-white shadow-lg" : "bg-[--color-surface-2]/50 text-[--color-text-tertiary] opacity-50"
+                                        )}
+                                    >
+                                        {isThinking || isTyping ? <Spinner size={18} /> : <ArrowUpIcon className="w-5 h-5" strokeWidth={2.5} />}
+                                    </motion.button>
+                                </div>
                             </div>
 
-                            <div className="flex items-center justify-between mt-1">
+                            <div className="flex items-center justify-between border-t border-[--color-border-subtle]/50 pt-3 px-1">
                                 <div className="flex items-center gap-2">
                                     <div className="relative" ref={modelDropdownRef}>
                                         <button 
                                             onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
-                                            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-[--color-surface-2]/50 border border-[--color-border-subtle] text-[11px] font-medium text-[--color-text-secondary] hover:bg-[--color-surface-2] transition-colors"
+                                            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[--color-surface-2]/30 border border-[--color-border-subtle] text-[11px] font-medium text-[--color-text-secondary] hover:bg-[--color-surface-2]/60 transition-colors"
                                         >
-                                            <span className="w-1.5 h-1.5 rounded-full bg-[--color-orange-vibrant]" />
-                                            {selectedModel}
-                                            <ChevronDown className={cn("w-3 h-3 transition-transform", isModelDropdownOpen && "rotate-180")} />
+                                            <span className="w-1.5 h-1.5 rounded-full bg-[--color-cta]" />
+                                            {activeSession?.model || "Sonnet 4.6"}
+                                            <ChevronDown className={cn("w-3 h-3 transition-transform opacity-60", isModelDropdownOpen && "rotate-180")} />
                                         </button>
                                         <AnimatePresence>
                                             {isModelDropdownOpen && (
                                                 <motion.div 
-                                                    initial={{ opacity: 0, scale: 0.95, y: 5 }}
+                                                    initial={{ opacity: 0, scale: 0.95, y: 10 }}
                                                     animate={{ opacity: 1, scale: 1, y: 0 }}
-                                                    exit={{ opacity: 0, scale: 0.95, y: 5 }}
-                                                    className="absolute bottom-full left-0 mb-2 w-40 bg-[--color-surface] border border-[--color-border] rounded-xl shadow-xl z-[60] overflow-hidden p-1"
+                                                    exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                                                    className="absolute bottom-full left-0 mb-3 w-44 glass-premium border border-[--color-border-subtle] rounded-xl shadow-2xl z-[60] overflow-hidden p-1"
                                                 >
                                                     {models.map(m => (
                                                         <button 
                                                             key={m}
-                                                            onClick={() => { setSelectedModel(m); setIsModelDropdownOpen(false); }}
+                                                            onClick={() => { 
+                                                                useChatStore.setState(state => ({
+                                                                    sessions: state.sessions.map(s => s.id === activeSessionId ? { ...s, model: m } : s)
+                                                                }));
+                                                                setIsModelDropdownOpen(false); 
+                                                            }}
                                                             className={cn(
-                                                                "w-full text-left px-3 py-1.5 rounded-lg text-xs transition-colors",
-                                                                selectedModel === m ? "bg-[--color-orange-vibrant] text-white" : "hover:bg-[--color-surface-2] text-[--color-text-secondary]"
+                                                                "w-full text-left px-4 py-2 rounded-lg text-xs transition-colors",
+                                                                (activeSession?.model || "Sonnet 4.6") === m ? "bg-[--color-cta] text-white" : "hover:bg-[--color-surface-2] text-[--color-text-secondary]"
                                                             )}
                                                         >
                                                             {m}
@@ -478,66 +570,32 @@ export function AnimatedAIChat() {
                                             )}
                                         </AnimatePresence>
                                     </div>
-                                    <button className="p-1.5 text-[--color-text-tertiary] hover:text-[--color-text] transition-colors">
-                                        <AudioLines className="w-4 h-4" />
-                                    </button>
                                 </div>
-
-                                <motion.button
-                                    type="button"
-                                    onClick={handleSendMessage}
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    disabled={isThinking || isTyping || !value.trim()}
-                                    className={cn(
-                                        "w-8 h-8 rounded-full flex items-center justify-center transition-all",
-                                        value.trim() && !isThinking ? "bg-[--color-text] text-white" : "bg-[--color-surface-2] text-[--color-text-tertiary] opacity-50"
-                                    )}
-                                >
-                                    {isThinking || isTyping ? <Spinner size={14} /> : <ArrowUpIcon className="w-4 h-4" />}
-                                </motion.button>
+                                <div className="flex gap-2.5">
+                                    <CommandChip icon={<Clip className="w-3.5 h-3.5" />} label="Code" />
+                                    <CommandChip icon={<Zap className="w-3.5 h-3.5" />} label="Stratégiser" />
+                                </div>
                             </div>
                         </div>
-
-                        <AnimatePresence>
-                            {attachments.length > 0 && (
-                                <motion.div className="px-4 pb-3 flex gap-2 flex-wrap" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}>
-                                    {attachments.map((file, index) => (
-                                        <div key={index} className="flex items-center gap-2 text-xs bg-[--color-surface-2] py-1.5 px-3 rounded-lg text-[--color-text-secondary]">
-                                            <span>{file}</span>
-                                            <button onClick={() => removeAttachment(index)} className="text-[--color-text-tertiary] hover:text-[--color-text]">
-                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                                            </button>
-                                        </div>
-                                    ))}
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-
                     </motion.div>
 
-                    <div className="mt-4 flex flex-col items-center gap-5">
-                        <div className="flex flex-wrap items-center justify-center gap-2">
-                            <CommandChip icon={<Clip className="w-3.5 h-3.5" />} label="Code" />
-                            <CommandChip icon={<Pen className="w-3.5 h-3.5" />} label="Écrire" />
-                            <CommandChip icon={<Zap className="w-3.5 h-3.5" />} label="Stratégiser" />
-                            <CommandChip icon={<Calendar className="w-3.5 h-3.5" />} label="Depuis Calendar" color="bg-[#1a73e8]" />
-                            <CommandChip icon={<Mail className="w-3.5 h-3.5" />} label="Depuis Gmail" color="bg-[#ea4335]" />
-                        </div>
-
+                    <div className="mt-8 flex flex-col items-center gap-5">
                         {messages.length > 0 && (
-                            <button onClick={() => { setMessages([]); localStorage.removeItem("prospectos_chat_history"); }} className="text-[10px] font-bold uppercase tracking-widest text-red-500/60 hover:text-red-500 transition-colors">
-                                Recommencer la discussion
+                            <button 
+                                onClick={() => activeSessionId && clearHistory(activeSessionId)} 
+                                className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--color-text-tertiary] hover:text-error/70 transition-colors"
+                            >
+                                Effacer la discussion
                             </button>
                         )}
                         
                         {messages.length === 0 && (
                             <div className="flex flex-wrap items-center justify-center gap-3 mt-2">
-                                {commandSuggestions.map((suggestion, index) => (
+                                {commandSuggestions.slice(0, 3).map((suggestion, index) => (
                                     <button 
                                         key={suggestion.prefix} 
                                         onClick={() => selectCommandSuggestion(index)} 
-                                        className="flex items-center gap-2.5 px-4 py-2.5 bg-white hover:bg-[--color-surface-white] border border-[--color-border] rounded-full text-[13px] font-medium text-[--color-text-secondary] transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5"
+                                        className="flex items-center gap-3 px-5 py-3 glass-premium hover:bg-[--color-surface-2] border border-[--color-border-subtle] rounded-full text-[13px] font-medium text-[--color-text-secondary] transition-all shadow-sm hover:shadow-md hover:-translate-y-1"
                                     >
                                         <span className="text-[--color-text-tertiary] opacity-70">{suggestion.icon}</span>
                                         <span>{suggestion.label}</span>
@@ -550,19 +608,19 @@ export function AnimatedAIChat() {
             </div>
 
             <AnimatePresence>
-                {(isThinking || isTyping) && (
+                {(isThinking || isTyping || isVoiceActive) && (
                     <motion.div 
-                        className="fixed bottom-8 left-1/2 transform -translate-x-1/2 backdrop-blur-2xl bg-[--color-surface] rounded-full px-4 py-2 shadow-lg border border-[--color-border] z-50 flex items-center gap-3"
-                        initial={{ opacity: 0, y: 20 }}
+                        className="fixed bottom-12 left-1/2 -ml-[120px] glass-premium rounded-full px-6 py-3 shadow-2xl border border-[--color-border-subtle] z-50 flex items-center gap-4 min-w-[240px]"
+                        initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 20 }}
+                        exit={{ opacity: 0, y: 30 }}
                     >
-                        <div className="w-8 h-7 rounded-sm bg-[--color-orange-vibrant] flex items-center justify-center shadow-[0_0_10px_rgba(255,96,0,0.3)]">
-                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                        <div className="w-7 h-7 rounded-lg bg-[--color-cta] flex items-center justify-center shadow-lg animate-pulse">
+                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="text-white"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-[--color-text-secondary]">
-                            <span className="font-medium text-[--color-text]">ProspectOS</span>
-                            <span className="text-[--color-text-tertiary]">{isThinking ? "Réflexion..." : "Transcription..."}</span>
+                        <div className="flex items-center gap-3 text-sm">
+                            <span className="font-bold tracking-tight">ProspectOS</span>
+                            <span className="text-[--color-text-secondary] whitespace-nowrap">{isThinking ? "Réflexion..." : isVoiceActive ? "Assistant Vocal..." : "Saisie..."}</span>
                             <TypingDots />
                         </div>
                     </motion.div>
@@ -574,21 +632,19 @@ export function AnimatedAIChat() {
 
 function TypingDots() {
     return (
-        <div className="flex items-center ml-1">
+        <div className="flex items-center ml-1 space-x-1">
             {[1, 2, 3].map((dot) => (
                 <motion.div
                     key={dot}
-                    className="w-1.5 h-1.5 bg-[--color-orange-vibrant] rounded-full mx-0.5"
-                    initial={{ opacity: 0.3 }}
+                    className="w-1 h-1 bg-[--color-cta] rounded-full"
                     animate={{ 
-                        opacity: [0.3, 0.9, 0.3],
-                        scale: [0.85, 1.1, 0.85]
+                        opacity: [0.3, 1, 0.3],
+                        scale: [0.8, 1.2, 0.8]
                     }}
                     transition={{
                         duration: 1.2,
                         repeat: Infinity,
-                        delay: dot * 0.15,
-                        ease: "easeInOut",
+                        delay: dot * 0.2,
                     }}
                 />
             ))}

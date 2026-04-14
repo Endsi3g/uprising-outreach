@@ -70,16 +70,16 @@ const SENTIMENT_STYLES: Record<string, { bg: string; text: string; label: string
 };
 
 interface LeadStats {
-  total_leads: int;
-  qualified_leads: int;
-  sent_emails: int;
-  replied_leads: int;
-  status_counts: Record<string, int>;
+  total_leads: number;
+  qualified_leads: number;
+  sent_emails: number;
+  replied_leads: number;
+  status_counts: Record<string, number>;
   source_stats: Array<{
     name: string;
-    sent: int;
-    replies: int;
-    positives: int;
+    sent: number;
+    replies: number;
+    positives: number;
     status: string;
   }>;
   recent_replies: Array<{
@@ -88,7 +88,7 @@ interface LeadStats {
     source?: string;
     notes?: string;
     updated_at: string;
-    # Add other fields as needed for the UI mapping
+    // Add other fields as needed for the UI mapping
   }>;
 }
 

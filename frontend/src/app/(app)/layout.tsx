@@ -15,11 +15,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       {/* ── Main region ──────────────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
         <div
-          className="flex-1 overflow-auto m-2 rounded-2xl relative"
+          className="flex-1 overflow-auto relative"
           style={{
             background: "var(--color-surface)",
-            border: "1px solid var(--color-border)",
-            boxShadow: "var(--shadow-whisper)",
           }}
         >
           <div className="h-full pb-20">

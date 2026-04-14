@@ -22,6 +22,7 @@
       
       /* Semantic */
       --color-focus: #3898ec;
+      --color-error: #b53333;
     }
     
     * { box-sizing: border-box; }
@@ -29,25 +30,27 @@
     body {
       margin: 0;
       padding: 0;
-      font-family: system-ui, -apple-system, sans-serif;
+      font-family: "Inter", system-ui, -apple-system, sans-serif;
       background: var(--color-parchment);
       color: var(--color-near-black);
       display: flex;
       flex-direction: column;
       height: 100vh;
       overflow: hidden;
-      line-height: 1.60; /* Editorial Line Height */
+      line-height: 1.60;
+      -webkit-font-smoothing: antialiased;
     }
     
     h1, h2, h3, .serif {
-      font-family: Georgia, serif; /* Fallback for Anthropic Serif */
+      font-family: "Georgia", serif;
       font-weight: 500;
       line-height: 1.25;
+      letter-spacing: -0.01em;
       margin: 0;
     }
     
     header {
-      padding: 20px 16px;
+      padding: 24px 20px;
       background: var(--color-parchment);
       border-bottom: 1px solid var(--color-cream);
       display: flex;
@@ -57,13 +60,14 @@
     }
     
     .logo {
-      font-size: 1.1rem;
+      font-size: 1.2rem;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
+      color: var(--color-near-black);
     }
     
-    .logo span { color: var(--color-terracotta); font-size: 1.3rem; }
+    .logo span { color: var(--color-terracotta); font-size: 1.4rem; }
 
     #chat-history {
       flex: 1;
@@ -77,75 +81,88 @@
     }
     
     .message {
-      max-width: 95%;
+      max-width: 90%;
       display: flex;
       flex-direction: column;
+      animation: messageIn 0.4s ease-out;
+    }
+    
+    @keyframes messageIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
     
     .message.user { align-self: flex-end; }
     .message.assistant { align-self: flex-start; }
     
     .message-inner {
-      padding: 14px 18px;
-      border-radius: 12px;
+      padding: 16px 20px;
+      border-radius: 16px;
       font-size: 15px;
+      line-height: 1.6;
     }
     
     .message.user .message-inner {
-      background: var(--color-sand);
+      background: var(--color-ivory);
       color: var(--color-near-black);
-      /* Ring Based border style */
       box-shadow: 0 0 0 1px var(--color-warm-ring);
     }
     
     .message.assistant .message-inner {
-      background: var(--color-ivory);
-      border: 1px solid var(--color-cream);
+      background: transparent;
+      border-left: 2px solid var(--color-warm-ring);
+      padding-left: 24px;
+      border-radius: 0;
       color: var(--color-near-black);
-      /* Whisper Shadow */
-      box-shadow: rgba(0,0,0,0.05) 0px 4px 24px;
     }
     
     /* Layout Chapter Rhythm */
     .analyze-banner {
       background: var(--color-ivory);
+      padding: 24px;
+      border-radius: 16px;
+      margin-bottom: 20px;
       border: 1px solid var(--color-cream);
-      padding: 20px;
-      border-radius: 12px;
-      margin-bottom: 12px;
-      box-shadow: rgba(0,0,0,0.03) 0px 4px 12px;
+      box-shadow: rgba(0,0,0,0.02) 0px 4px 12px;
+      transition: all 0.3s ease;
+    }
+    
+    .analyze-banner:hover {
+      box-shadow: rgba(0,0,0,0.05) 0px 8px 32px;
+      transform: translateY(-2px);
     }
     
     .analyze-banner h3 {
-      font-size: 1rem;
-      margin-bottom: 8px;
+      font-size: 1.1rem;
+      margin-bottom: 10px;
     }
     
     .analyze-banner p {
-      margin: 0 0 16px 0;
+      margin: 0 0 20px 0;
       font-size: 14px;
       color: var(--color-olive-gray);
     }
 
     #analyze-button {
-      background: var(--color-sand);
-      color: var(--color-near-black);
+      background: var(--color-terracotta);
+      color: white;
       border: none;
-      padding: 8px 16px;
-      border-radius: 8px;
-      font-size: 12px;
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-size: 13px;
       font-weight: 500;
       cursor: pointer;
-      box-shadow: 0 0 0 1px var(--color-warm-ring);
-      transition: background 0.2s;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(201, 100, 66, 0.2);
     }
     
     #analyze-button:hover {
-      background: #dedcce;
+      transform: scale(1.02);
+      box-shadow: 0 6px 16px rgba(201, 100, 66, 0.3);
     }
     
     footer {
-      padding: 24px 16px;
+      padding: 24px 20px;
       background: var(--color-parchment);
       border-top: 1px solid var(--color-cream);
     }
@@ -153,13 +170,17 @@
     .composer-container {
       background: var(--color-ivory);
       border: 1px solid var(--color-cream);
-      border-radius: 16px;
-      padding: 12px;
+      border-radius: 20px;
+      padding: 14px;
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      /* Ring Based depth */
-      box-shadow: 0 0 0 1px var(--color-cream);
+      gap: 16px;
+      box-shadow: rgba(0,0,0,0.03) 0px 4px 12px;
+      transition: box-shadow 0.3s ease;
+    }
+    
+    .composer-container:focus-within {
+      box-shadow: 0 0 0 2px var(--color-focus)22, rgba(0,0,0,0.05) 0px 8px 32px;
     }
     
     textarea {
@@ -169,18 +190,21 @@
       outline: none;
       resize: none;
       font-size: 16px;
-      padding: 4px;
-      min-height: 40px;
+      padding: 6px;
+      min-height: 48px;
       color: var(--color-near-black);
       font-family: inherit;
+      line-height: 1.5;
     }
     
-    textarea::placeholder { color: var(--color-stone-gray); }
+    textarea::placeholder { color: var(--color-stone-gray); opacity: 0.7; }
 
     .composer-actions {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      padding-top: 8px;
+      border-top: 1px solid var(--color-cream);
     }
     
     .btn-secondary {
@@ -188,44 +212,51 @@
       border: none;
       cursor: pointer;
       color: var(--color-stone-gray);
-      padding: 4px;
+      padding: 8px;
       display: flex;
       align-items: center;
-      border-radius: 4px;
+      border-radius: 10px;
+      transition: all 0.2s ease;
     }
     
-    .btn-secondary:hover { color: var(--color-near-black); background: var(--color-sand); }
+    .btn-secondary:hover { color: var(--color-near-black); background: var(--color-cream); }
     
     .btn-primary {
       background: var(--color-terracotta);
       border: none;
       color: white;
-      padding: 8px 20px;
-      border-radius: 10px;
+      padding: 10px 24px;
+      border-radius: 12px;
       font-size: 14px;
       font-weight: 500;
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 8px rgba(201, 100, 66, 0.2);
     }
     
-    .btn-primary:hover { opacity: 0.95; }
+    .btn-primary:hover { 
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(201, 100, 66, 0.3);
+    }
     
     .copyright {
       text-align: center;
       font-size: 10px;
       color: var(--color-stone-gray);
-      margin-top: 12px;
-      letter-spacing: 0.05rem;
+      margin-top: 20px;
+      letter-spacing: 0.15em;
       text-transform: uppercase;
+      opacity: 0.6;
     }
   </style>
 </head>
 <body>
   <header>
     <div class="logo serif"><span>✺</span> ProspectOS</div>
-    <div style="color:var(--color-stone-gray)">
+    <div id="settings-btn" style="color:var(--color-stone-gray); cursor:pointer; transition:color 0.2s ease;" onmouseover="this.style.color='var(--color-near-black)'" onmouseout="this.style.color='var(--color-stone-gray)'" title="Paramètres">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
     </div>
   </header>

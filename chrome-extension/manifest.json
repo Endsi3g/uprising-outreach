@@ -14,6 +14,10 @@
   "background": {
     "service_worker": "background.js"
   },
+  "options_page": "options.html",
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
   "icons": {
     "16": "icon.png",
     "48": "icon.png",

@@ -73,16 +73,10 @@ export function FloatingDock() {
   })?.key ?? "chat";
 
   return (
-    <div>
+    <div className="flex items-center justify-center">
       <motion.div
         layout
-        className="flex items-center gap-1 px-1.5 py-1.5 rounded-2xl"
-        style={{
-          background: "var(--color-surface)",
-          border: "1px solid var(--color-border)",
-          boxShadow: "var(--shadow-whisper), var(--shadow-ring)",
-          backdropFilter: "blur(16px)",
-        }}
+        className="flex items-center gap-1 px-1.5 py-1.5 rounded-2xl bg-[--color-surface]/80 border border-[--color-border] shadow-whisper backdrop-blur-xl"
       >
         {MODES.map((mode) => {
           const isActive = activeKey === mode.key;
@@ -95,7 +89,7 @@ export function FloatingDock() {
               onMouseEnter={() => setHoveredKey(mode.key)}
               onMouseLeave={() => setHoveredKey(null)}
               className={cn(
-                "relative flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors duration-200",
+                "relative flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200",
                 isActive ? "text-[--color-text]" : "text-[--color-text-secondary] hover:text-[--color-text]"
               )}
             >
@@ -103,21 +97,17 @@ export function FloatingDock() {
               {isActive && (
                 <motion.div
                   layoutId="active-pill"
-                  className="absolute inset-0 rounded-xl"
-                  style={{ 
-                    background: "var(--color-surface-2)",
-                    boxShadow: "var(--shadow-ring)",
-                    zIndex: -1 
-                  }}
-                  transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
+                  className="absolute inset-0 rounded-xl bg-[--color-surface-2] shadow-sm"
+                  style={{ zIndex: -1 }}
+                  transition={{ type: "spring", bounce: 0.15, duration: 0.4 }}
                 />
               )}
 
-              {/* Hover Background Pill (Internal feedback) */}
+              {/* Hover Background Pill */}
               {isHovered && !isActive && (
                 <motion.div
                   layoutId="hover-pill"
-                  className="absolute inset-0 rounded-xl bg-[--color-border-subtle]"
+                  className="absolute inset-0 rounded-xl bg-[--color-surface-white]/50"
                   style={{ zIndex: -1 }}
                   transition={{ type: "spring", bounce: 0, duration: 0.3 }}
                 />
@@ -125,26 +115,24 @@ export function FloatingDock() {
 
               <motion.span
                 animate={{ 
-                  scale: isHovered ? 1.15 : 1,
+                  scale: isHovered ? 1.1 : 1,
+                  y: isHovered ? -1 : 0
                 }}
-                transition={{ type: "spring", stiffness: 400, damping: 10 }}
-                className="text-sm flex-shrink-0"
+                className={cn("text-lg", isActive && "text-[--color-cta]")}
               >
                 {mode.icon}
               </motion.span>
               
-              <AnimatePresence>
-                {!isActive && isHovered ? (
+              <AnimatePresence mode="wait">
+                {(isActive || isHovered) && (
                    <motion.span
-                    initial={{ opacity: 0, width: 0 }}
-                    animate={{ opacity: 1, width: "auto" }}
-                    exit={{ opacity: 0, width: 0 }}
-                    className="overflow-hidden whitespace-nowrap"
+                    initial={{ opacity: 0, width: 0, x: -5 }}
+                    animate={{ opacity: 1, width: "auto", x: 0 }}
+                    exit={{ opacity: 0, width: 0, x: -5 }}
+                    className="overflow-hidden whitespace-nowrap text-xs font-semibold"
                    >
                     {mode.label}
                    </motion.span>
-                ) : (
-                  <span>{mode.label}</span>
                 )}
               </AnimatePresence>
 
