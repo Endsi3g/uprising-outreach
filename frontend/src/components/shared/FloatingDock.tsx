@@ -30,7 +30,7 @@ const MODES = [
   },
   { 
     key: "outreach", 
-    label: "Outreach", 
+    label: "Campagnes", 
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
         <path d="M22 17a2 2 0 01-2 2H4a2 2 0 01-2-2V9.5l10-6 10 6V17z" />
@@ -73,7 +73,7 @@ export function FloatingDock() {
   })?.key ?? "chat";
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
+    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-40">
       <motion.div
         layout
         className="flex items-center gap-1 px-1.5 py-1.5 rounded-2xl"
@@ -125,7 +125,7 @@ export function FloatingDock() {
 
               <motion.span
                 animate={{ 
-                  scale: isHovered ? 1.15 : 1,
+                  scale: isHovered ? 1.05 : 1,
                 }}
                 transition={{ type: "spring", stiffness: 400, damping: 10 }}
                 className="text-sm flex-shrink-0"

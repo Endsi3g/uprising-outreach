@@ -192,7 +192,7 @@ function ProjectDetailsContent() {
               </button>
 
               <div className="flex items-center gap-4 text-xs font-medium text-[--color-text-tertiary]">
-                <span className="cursor-pointer hover:text-[--color-text] transition-colors uppercase tracking-widest text-[10px]">Sonnet 4.6 ⌄</span>
+                <button type="button" className="cursor-pointer hover:text-[--color-text] transition-colors uppercase tracking-widest text-[10px]">ProspectOS AI ⌄</button>
                 <button 
                   onClick={() => handleSubmit()}
                   className={cn(

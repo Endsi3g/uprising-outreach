@@ -1,12 +1,12 @@
 export type AIModel =
-  | "claude-sonnet-4-6"
-  | "claude-haiku-4-5"
+  | "prospectos-ai-core"
+  | "prospectos-ai-fast"
   | "ollama/llama3"
   | "ollama/mistral";
 
 export const AI_MODELS: { id: AIModel; label: string; badge?: string }[] = [
-  { id: "claude-sonnet-4-6", label: "Claude Sonnet", badge: "Recommandé" },
-  { id: "claude-haiku-4-5", label: "Claude Haiku", badge: "Rapide" },
+  { id: "prospectos-ai-core", label: "ProspectOS Core", badge: "Recommandé" },
+  { id: "prospectos-ai-fast", label: "ProspectOS Fast", badge: "Rapide" },
   { id: "ollama/llama3", label: "Llama 3", badge: "Local" },
   { id: "ollama/mistral", label: "Mistral", badge: "Local" },
 ];

@@ -20,11 +20,16 @@ class ApiClient {
     const headers: HeadersInit = { "Content-Type": "application/json" };
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
-    const res = await fetch(`${BASE_URL}${path}`, {
-      method,
-      headers,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
-    });
+    let res: Response;
+    try {
+      res = await fetch(`${BASE_URL}${path}`, {
+        method,
+        headers,
+        body: body !== undefined ? JSON.stringify(body) : undefined,
+      });
+    } catch (err) {
+      throw new ApiError(503, "NETWORK_ERROR", "Impossible de contacter le serveur. Assurez-vous qu'il est bien démarré.");
+    }
 
     if (!res.ok) {
       const error = await res.json().catch(() => ({}));
@@ -49,11 +54,16 @@ class ApiClient {
     const headers: HeadersInit = {};
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
-    const res = await fetch(`${BASE_URL}${path}`, {
-      method: "POST",
-      headers,
-      body: formData,
-    });
+    let res: Response;
+    try {
+      res = await fetch(`${BASE_URL}${path}`, {
+        method: "POST",
+        headers,
+        body: formData,
+      });
+    } catch (err) {
+      throw new ApiError(503, "NETWORK_ERROR", "Impossible de contacter le serveur. Assurez-vous qu'il est bien démarré.");
+    }
 
     if (!res.ok) {
       const error = await res.json().catch(() => ({}));

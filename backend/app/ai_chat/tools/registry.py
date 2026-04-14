@@ -80,6 +80,24 @@ TOOL_DEFINITIONS = [
             "required": ["lead_ids"],
         },
     },
+    {
+        "name": "perform_autonomous_action",
+        "description": "LANCE UN AGENT AUTONOME dans un container Docker sécurisé pour effectuer des tâches complexes que l'assistant standard ne peut pas faire directement (ex: audit web profond, modification de fichiers, recherche multi-sources, interaction avec des APIs tierces). À utiliser dès qu'un raisonnement complexe ou une action système est nécessaire. L'agent peut naviguer sur le web, utiliser un terminal et lire/écrire des fichiers.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "prompt": {
+                    "type": "string",
+                    "description": "L'objectif détaillé que l'agent autonome doit atteindre (ex: 'Fais un audit SEO complet du site uprising.agency et liste les gaps')."
+                },
+                "group_id": {
+                    "type": "string",
+                    "description": "ID du workspace ou groupe pour l'isolation (par défaut: 'global')."
+                }
+            },
+            "required": ["prompt"]
+        },
+    },
 ]
 
 
@@ -102,6 +120,8 @@ async def execute_tool(
         return await _score_leads(tool_input, workspace_id, db)
     elif name == "enrich_leads":
         return await _enrich_leads(tool_input, workspace_id, db)
+    elif name == "run_nanoclaw_agent":
+        return await _run_nanoclaw_agent(tool_input)
     else:
         return {"error": f"Unknown tool: {name}"}
 
@@ -210,3 +230,8 @@ async def _enrich_leads(params: dict, workspace_id: uuid.UUID, db: AsyncSession)
     req = BulkActionRequest(lead_ids=lead_ids, action="enrich")
     result = await bulk_action(db, workspace_id, req)
     return {"enriched": result.affected, "action": "enrich"}
+async def _run_nanoclaw_agent(params: dict) -> dict:
+    from app.ai_chat.nanoclaw_bridge import nanoclaw_bridge
+    prompt = params.get("prompt", "")
+    group_id = params.get("group_id", "default")
+    return nanoclaw_bridge.run_agent(prompt, group_id)

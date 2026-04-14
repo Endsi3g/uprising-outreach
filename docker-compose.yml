@@ -79,6 +79,22 @@ services:
     depends_on:
       - backend
 
+  nanoclaw:
+    build:
+      context: ./nanoclaw
+      dockerfile: Dockerfile
+    volumes:
+      - ./nanoclaw:/app
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "3001:3001"
+    env_file:
+      - .env
+    environment:
+      NANOCLAW_PORT: 3001
+    depends_on:
+      - redis
+
   mailhog:
     image: mailhog/mailhog
     ports:

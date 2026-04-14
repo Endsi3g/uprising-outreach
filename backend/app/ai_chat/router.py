@@ -12,6 +12,7 @@ from app.ai_chat.schemas import (
     ChatRequest,
     ConversationResponse,
     MessageResponse,
+    NanoClawRequest,
 )
 
 router = APIRouter(prefix="/ai", tags=["ai-chat"])
@@ -61,3 +62,13 @@ async def get_messages(
 ) -> list[MessageResponse]:
     msgs = await service.get_conversation_messages(db, current_user.workspace_id, conversation_id)
     return [MessageResponse.model_validate(m) for m in msgs]
+
+
+@router.post("/run-nanoclaw")
+async def run_nanoclaw_direct(
+    request: NanoClawRequest,
+    current_user: User = Depends(get_current_user),
+):
+    """Directly trigger a NanoClaw action from the UI."""
+    from app.ai_chat.nanoclaw_bridge import nanoclaw_bridge
+    return await nanoclaw_bridge.run_agent(prompt=request.prompt, group_id=request.group_id)

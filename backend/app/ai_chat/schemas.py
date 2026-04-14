@@ -26,6 +26,11 @@ class ChatRequest(BaseModel):
     tools_enabled: bool = True
 
 
+class NanoClawRequest(BaseModel):
+    prompt: str
+    group_id: str = "global"
+
+
 # ---------------------------------------------------------------------------
 # Response objects (streamed as SSE chunks)
 # ---------------------------------------------------------------------------

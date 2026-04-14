@@ -9,9 +9,17 @@ function Stop-ProcessOnPort($port) {
     if ($connections) {
         $pids = $connections.OwningProcess | Select-Object -Unique
         foreach ($p in $pids) {
+            if ($p -eq 0 -or $p -eq 4) {
+                Write-Warning "System process (PID: ${p}) holds port ${port}. Skipping..."
+                continue
+            }
             try {
                 $process = Get-Process -Id $p -ErrorAction SilentlyContinue
                 if ($process) {
+                    if ($process.Name -match "docker" -or $process.Name -eq "wslrelay") {
+                        Write-Warning "System or Docker Process ($($process.Name), PID: ${p}) holds port ${port}. Skipping..."
+                        continue
+                    }
                     Write-Host "Stopping process $($process.Name) (PID: ${p}) on port ${port}..." -ForegroundColor Yellow
                     Stop-Process -Id $p -Force
                 }
@@ -34,8 +42,8 @@ Stop-ProcessOnPort 3000
 Stop-ProcessOnPort 8000
 
 # Check if Docker is running
-$dockerStatus = (docker info 2>&1)
-if ($dockerStatus -match "error during connect") {
+$dockerStatus = (docker info 2>&1) | Out-String
+if ($dockerStatus -match "error during connect" -or $dockerStatus -match "Le fichier(.)*introuvable") {
     Write-Host "Error: Docker Desktop is not running. Please start Docker and run this script again." -ForegroundColor Red
     exit
 }

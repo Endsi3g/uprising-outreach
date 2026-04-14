@@ -10,6 +10,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useLeadsStore } from "@/store/leads";
 import type { Lead, Page } from "@/types/leads";
 import { cn } from "@/lib/utils";
+import { Sparkles, Mail, UserPlus, Zap } from "lucide-react";
+import { useAIChat } from "@/store/useAIChat";
 
 const STATUS_FILTERS = [
   { id: "all", label: "Tous", count: 120 },
@@ -45,6 +47,17 @@ export default function LeadsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["leads"] });
       clearSelection();
+    }
+  });
+
+  const deepAuditMutation = useMutation({
+    mutationFn: (leadId: string) => 
+      apiClient.post(`/ai/run-nanoclaw`, {
+        prompt: `Effectue une analyse profonde pour le prospect ${leadId}. Analyse le site web, les signaux de marché et propose une stratégie de personnalisation ultra-ciblée.`,
+        group_id: "leads_audit"
+      }),
+    onSuccess: () => {
+      // Show toast or notification
     }
   });
 
@@ -221,9 +234,33 @@ export default function LeadsPage() {
                      </div>
                   </div>
 
-                  <div className="pt-8 flex gap-3">
-                    <Button variant="primary" className="flex-1">Écrire un Email</Button>
-                    <Button variant="secondary" className="flex-1">Assigner</Button>
+                  <div className="pt-8 flex flex-col gap-3">
+                    <Button 
+                      variant="primary" 
+                      onClick={() => deepAuditMutation.mutate(selectedLead.id)}
+                      disabled={deepAuditMutation.isPending}
+                      className="w-full relative overflow-hidden group/audit"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-orange-400/20 to-purple-400/20 opacity-0 group-hover/audit:opacity-100 transition-opacity" />
+                      <div className="flex items-center justify-center gap-2">
+                        {deepAuditMutation.isPending ? (
+                          <Zap className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Sparkles className="w-4 h-4 text-orange-400" />
+                        )}
+                        <span>{deepAuditMutation.isPending ? "Analyse en cours..." : "Analyse Profonde (NanoClaw)"}</span>
+                      </div>
+                    </Button>
+                    <div className="flex gap-3">
+                      <Button variant="secondary" className="flex-1 flex items-center justify-center gap-2">
+                        <Mail className="w-4 h-4" />
+                        Écrire
+                      </Button>
+                      <Button variant="secondary" className="flex-1 flex items-center justify-center gap-2">
+                        <UserPlus className="w-4 h-4" />
+                        Assigner
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ) : (

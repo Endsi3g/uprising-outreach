@@ -11,8 +11,8 @@ const config: Config = {
           light: "#d97757",
         },
         // ── Backgrounds ─────────────────────────────────────────────────────
-        parchment: "#141413",
-        ivory: "#30302e",
+        parchment: "#f5f4ed",
+        ivory: "#faf9f5",
         // ── Text ────────────────────────────────────────────────────────────
         "near-black": "#141413",
         "warm-gray": {

@@ -90,8 +90,8 @@ Aesthetic: warm, literary, premium — inspired by the ProspectOS interface. Avo
 - All neutrals use warm (yellow-brown) undertones — no cool grays
 
 **Typography:**
-- Headlines: Anthropic Serif, weight 500, line-height 1.10–1.30
-- UI/body: Anthropic Sans, weight 400–500
+- Headlines: ProspectOS Serif, weight 500, line-height 1.10–1.30
+- UI/body: ProspectOS Sans, weight 400–500
 - Body line-height: 1.60 (editorial, not dense)
 
 **Component patterns:**

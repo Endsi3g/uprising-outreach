@@ -104,7 +104,7 @@ export const useAIChat = create<AIChatState>((set, get) => ({
   },
   clearMessages: () => set({ messages: [], activeConversationId: null }),
 
-  model: "claude-sonnet-4-6",
+  model: "prospectos-ai-core",
   setModel: (model) => set({ model }),
 
   isStreaming: false,

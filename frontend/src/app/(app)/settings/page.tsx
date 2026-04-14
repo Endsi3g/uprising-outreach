@@ -8,6 +8,14 @@ import { useTheme } from "@/components/shared/ThemeProvider";
 import { apiClient } from "@/lib/api";
 import type { SenderAccount } from "@/types/campaigns";
 
+import { AccountSettings } from "@/components/settings/AccountSettings";
+import { PrivacySettings } from "@/components/settings/PrivacySettings";
+import { BillingSettings } from "@/components/settings/BillingSettings";
+import { UsageSettings } from "@/components/settings/UsageSettings";
+import { CapsSettings } from "@/components/settings/CapsSettings";
+import { ClaudeCodeSettings } from "@/components/settings/ClaudeCodeSettings";
+import { ProspectOSExtensionSettings } from "@/components/settings/ProspectOSExtensionSettings";
+
 type SettingTab = 
   | "general" 
   | "account" 
@@ -34,8 +42,8 @@ export default function SettingsPage() {
     { key: "usage" as const, label: "Utilisation" },
     { key: "caps" as const, label: "Capacités" },
     { key: "connectors" as const, label: "Connecteurs" },
-    { key: "claude_code" as const, label: "Claude Code" },
-    { key: "claude_chrome" as const, label: "Claude dans Chrome", beta: true },
+    { key: "claude_code" as const, label: "ProspectOS CLI" },
+    { key: "claude_chrome" as const, label: "ProspectOS Extension", beta: true },
   ];
 
   return (
@@ -47,7 +55,7 @@ export default function SettingsPage() {
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             className={cn(
-              "flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all",
+              "flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all text-left",
               activeTab === tab.key 
                 ? "bg-[--color-surface-2] text-[--color-text] font-medium" 
                 : "text-[--color-text-secondary] hover:bg-[--color-surface] hover:text-[--color-text]"
@@ -67,22 +75,14 @@ export default function SettingsPage() {
       <main className="flex-1 overflow-y-auto custom-scrollbar px-12 py-12 max-w-4xl">
         <AnimatePresence mode="wait">
           {activeTab === "general" && <GeneralSettings key="general" />}
+          {activeTab === "account" && <AccountSettings key="account" />}
+          {activeTab === "privacy" && <PrivacySettings key="privacy" />}
+          {activeTab === "billing" && <BillingSettings key="billing" />}
+          {activeTab === "usage" && <UsageSettings key="usage" />}
+          {activeTab === "caps" && <CapsSettings key="caps" />}
           {activeTab === "connectors" && <ConnecteursSettings key="connectors" searchParams={searchParams} />}
-          {activeTab !== "general" && activeTab !== "connectors" && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="py-20 text-center"
-            >
-              <div className="w-16 h-16 rounded-full bg-[--color-surface] border border-[--color-border] flex items-center justify-center mx-auto mb-6 text-xl">
-                 ⚙️
-              </div>
-              <h2 className="text-xl font-serif mb-2">Section {activeTab}</h2>
-              <p className="text-sm text-[--color-text-secondary] max-w-sm mx-auto">
-                Ceci est un template pour les autres sections de réglages. La logique de l'interface reste cohérente à travers toute l'application.
-              </p>
-            </motion.div>
-          )}
+          {activeTab === "claude_code" && <ClaudeCodeSettings key="claude_code" />}
+          {activeTab === "claude_chrome" && <ProspectOSExtensionSettings key="claude_chrome" />}
         </AnimatePresence>
       </main>
     </div>

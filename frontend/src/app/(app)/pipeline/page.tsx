@@ -76,7 +76,7 @@ export default function PipelinePage() {
       </div>
 
       <div className="flex-1 overflow-x-auto custom-scrollbar select-none">
-        <LayoutGroup>
+        <LayoutGroup id="pipeline-board">
           <div className="flex gap-6 h-full px-10 pb-10 min-w-max">
             {STAGES.map((stage) => {
               const cards = opportunities.filter((o) => o.stage === stage.key);

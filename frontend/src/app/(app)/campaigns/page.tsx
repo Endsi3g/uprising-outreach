@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { Button, Input } from "@/components/ui";
+import { Modal, Button, Input } from "@/components/ui";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +22,8 @@ export default function CampaignsPage() {
     { id: "2", type: "wait", title: "Pause", delay: "2 jours" },
     { id: "3", type: "email", title: "Suivi de valeur", template: "Follow-up - Value prop" },
   ]);
+  const [isLaunchModalOpen, setIsLaunchModalOpen] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<string | null>(null);
 
   const addStep = (type: "email" | "wait") => {
     const newStep: Step = {
@@ -70,7 +72,7 @@ export default function CampaignsPage() {
            </div>
            <div className="flex gap-2">
               <Button variant="secondary" size="sm">Sauvegarder</Button>
-              <Button variant="primary" size="sm">Lancer la campagne</Button>
+              <Button variant="primary" size="sm" onClick={() => setIsLaunchModalOpen(true)}>Lancer la campagne</Button>
            </div>
         </div>
         <p className="text-sm text-[--color-text-secondary]">Créez des parcours automatisés pour vos prospects.</p>
@@ -78,7 +80,7 @@ export default function CampaignsPage() {
 
       <div className="flex-1 overflow-y-auto px-8 pb-32 custom-scrollbar">
         <div className="max-w-2xl mx-auto py-12">
-          <LayoutGroup>
+          <LayoutGroup id="campaigns-sequence">
             <div className="relative">
               {/* Sequence start indicator */}
               <div className="flex justify-center mb-10">
@@ -140,7 +142,18 @@ export default function CampaignsPage() {
                       </div>
 
                       {step.type === "email" ? (
-                        <div className="p-4 rounded-xl bg-[--color-surface] border border-[--color-border-subtle] flex items-center justify-between hover:bg-[--color-surface-2] transition-colors cursor-pointer group/inner">
+                        <div 
+                          role="button"
+                          tabIndex={0}
+                          className="p-4 rounded-xl bg-[--color-surface] border border-[--color-border-subtle] flex items-center justify-between hover:bg-[--color-surface-2] transition-colors cursor-pointer group/inner"
+                          onClick={() => setEditingTemplate(step.template || "")}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              setEditingTemplate(step.template || "");
+                            }
+                          }}
+                        >
                           <div className="flex items-center gap-3">
                             <span className="text-xl">📄</span>
                             <span className="text-sm font-medium text-[--color-text-secondary] group-hover/inner:text-[--color-text] transition-colors">
@@ -196,6 +209,28 @@ export default function CampaignsPage() {
           </LayoutGroup>
         </div>
       </div>
+
+      <Modal open={isLaunchModalOpen} onClose={() => setIsLaunchModalOpen(false)} title="Lancer la campagne">
+        <div className="pt-2 pb-4 space-y-4">
+          <p className="text-sm text-[--color-text-secondary]">Êtes-vous sûr de vouloir lancer la campagne <strong>{campaignName}</strong> ? Les emails seront planifiés immédiatement pour les prospects actifs.</p>
+          <div className="flex gap-3 pt-4 border-t border-[--color-border]">
+            <Button variant="secondary" className="flex-1" onClick={() => setIsLaunchModalOpen(false)}>Annuler</Button>
+            <Button variant="primary" className="flex-1" onClick={() => { setIsLaunchModalOpen(false); alert("Campagne lancée !"); }}>Confirmer le lancement</Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal open={!!editingTemplate} onClose={() => setEditingTemplate(null)} title="Éditeur de template">
+        <div className="pt-4 pb-2">
+          <p className="text-sm text-[--color-text-secondary] mb-4">Édition du template : <strong>{editingTemplate}</strong></p>
+          <div className="h-48 rounded-xl border border-[--color-border] bg-[--color-surface] p-4 text-[--color-text-tertiary] text-sm flex items-center justify-center">
+            [ Éditeur riche en cours d'intégration ]
+          </div>
+          <div className="flex justify-end mt-4">
+            <Button variant="primary" onClick={() => setEditingTemplate(null)}>Terminer</Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
