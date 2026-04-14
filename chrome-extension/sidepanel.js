@@ -172,6 +172,13 @@ async function analyzePage() {
             throw new Error("Impossible d'obtenir l'URL de l'onglet actif.");
         }
 
+        // Bloquer l'analyse des pages système Chrome (sécurité)
+        if (tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://')) {
+            chatHistory.removeChild(loadingDiv);
+            addMessage("assistant", "Désolé, je ne peux pas analyser les pages système de Chrome ou les pages de configuration de l'extension pour des raisons de sécurité.");
+            return;
+        }
+
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout pour scraping + analyse
 
