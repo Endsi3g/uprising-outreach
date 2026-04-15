@@ -7,6 +7,7 @@ import { useTheme } from "@/components/shared/ThemeProvider";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useChatStore } from "@/store/chat";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { 
   Bot, 
   Mic, 
@@ -138,6 +139,7 @@ export function AppSidebar({ collapsed, onToggle }: SidebarProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   
   const { sessions, activeSessionId, setActiveSession, addSession, deleteSession } = useChatStore();
+  const { data: currentUser } = useCurrentUser();
 
   const handleToggleTheme = () => {
     if (theme === "dark") setTheme("light");
@@ -342,9 +344,13 @@ export function AppSidebar({ collapsed, onToggle }: SidebarProps) {
               >
                 <div className="p-4 border-b border-[--color-border] bg-[--color-surface-2]/30">
                   <div className="flex items-center gap-3 mb-1">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#ff6000] to-[#c96442] flex items-center justify-center text-white font-serif font-bold text-lg">K</div>
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#ff6000] to-[#c96442] flex items-center justify-center text-white font-serif font-bold text-lg">
+                      {currentUser?.first_name?.[0]?.toUpperCase() ?? "?"}
+                    </div>
                     <div>
-                      <p className="text-sm font-semibold text-[--color-text]">Kael Uprising</p>
+                      <p className="text-sm font-semibold text-[--color-text]">
+                        {currentUser ? `${currentUser.first_name} ${currentUser.last_name}` : "…"}
+                      </p>
                       <p className="text-[10px] text-[--color-text-tertiary] uppercase tracking-widest font-bold">Plan Pro</p>
                     </div>
                   </div>
@@ -369,15 +375,17 @@ export function AppSidebar({ collapsed, onToggle }: SidebarProps) {
             )}
           >
             <div className="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-sm flex-shrink-0 text-white bg-gradient-to-br from-[#ff6000] to-[#c96442] shadow-sm">
-              K
+              {currentUser?.first_name?.[0]?.toUpperCase() ?? "?"}
             </div>
             {!collapsed && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, x: -4 }}
                 animate={{ opacity: 1, x: 0 }}
                 className="flex-1 min-w-0"
               >
-                <p className="text-[13px] font-semibold truncate text-[--color-text]">Kael</p>
+                <p className="text-[13px] font-semibold truncate text-[--color-text]">
+                  {currentUser?.first_name ?? "…"}
+                </p>
                 <p className="text-[11px] truncate text-[--color-text-tertiary]">Professionnel</p>
               </motion.div>
             )}

@@ -7,6 +7,19 @@ from pydantic import BaseModel, Field
 from app.leads.models import LeadStatus, LeadTemperature
 
 
+class LeadFilter(BaseModel):
+    status: list[LeadStatus] | None = None
+    owner_id: uuid.UUID | None = None
+    score_min: int | None = None
+    score_max: int | None = None
+    source: str | None = None
+
+
+class CSVImportResponse(BaseModel):
+    job_id: str
+    message: str
+
+
 class LeadCreate(BaseModel):
     company_id: uuid.UUID | None = None
     contact_id: uuid.UUID | None = None

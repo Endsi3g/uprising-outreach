@@ -418,7 +418,7 @@ export function AnimatedAIChat() {
                             <div className="flex items-center justify-center gap-3 mb-3">
                                 <span className="text-[--color-cta] text-3xl animate-float">✺</span>
                                 <h1 className="text-5xl font-normal tracking-tight" style={{ fontFamily: "var(--font-serif)" }}>
-                                    Bon après-midi, Kael
+                                    Bon après-midi
                                 </h1>
                             </div>
                             <p className="text-sm uppercase tracking-[0.2em] font-medium opacity-60">

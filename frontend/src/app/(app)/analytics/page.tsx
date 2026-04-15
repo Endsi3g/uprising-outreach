@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api";
 import { Card, Badge } from "@/components/ui";
 import { Spinner } from "@/components/ui/Spinner";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 /* ─── Mock / fallback data for dashboard display ─────────────────────────── */
 
@@ -93,7 +94,8 @@ interface LeadStats {
 }
 
 export default function AnalyticsPage() {
-  const { data: stats, isLoading } = useQuery<any>({
+  const { data: user } = useCurrentUser();
+  const { data: stats, isLoading } = useQuery<LeadStats>({
     queryKey: ["leads-stats"],
     queryFn: () => apiClient.get("/leads/stats"),
     staleTime: 30_000,
@@ -160,7 +162,7 @@ export default function AnalyticsPage() {
             className="text-4xl font-normal leading-tight"
             style={{ fontFamily: "var(--font-serif)", color: "var(--color-text)" }}
           >
-            Bonjour, Kael
+            Bonjour, {user?.first_name ?? "…"}
           </h1>
         </div>
         <p className="text-sm uppercase tracking-[0.1em] font-medium" style={{ color: "var(--color-text-tertiary)" }}>

@@ -36,7 +36,7 @@ export default function VoiceAssistantPage() {
       <main className="flex-1 flex flex-col items-center justify-center relative z-10">
         <div className="text-center mb-16 px-6">
            <h1 className="text-4xl font-serif font-medium mb-4">
-             {isListening ? "Je vous écoute..." : "À votre écoute, Kael"}
+             {isListening ? "Je vous écoute..." : "À votre écoute"}
            </h1>
            <p className="text-white/40 max-w-sm mx-auto">
              Dites "Nouvelle prospection" ou demandez une analyse de site web.

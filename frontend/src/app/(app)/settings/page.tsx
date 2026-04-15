@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/components/shared/ThemeProvider";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 type SettingTab = 
   | "general" 
@@ -86,6 +87,7 @@ export default function SettingsPage() {
 }
 
 function AccountSettings() {
+  const { data: user } = useCurrentUser();
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-10">
       <section>
@@ -94,13 +96,15 @@ function AccountSettings() {
           <div className="space-y-2">
             <label className="text-xs font-medium text-[--color-text-secondary]">Nom complet</label>
             <div className="bg-[--color-surface] border border-[--color-border] rounded-xl px-4 py-2.5 flex items-center gap-3">
-              <div className="w-6 h-6 rounded-full bg-[--color-border-warm] flex items-center justify-center text-[10px]">K</div>
-              <input type="text" defaultValue="Kael" className="bg-transparent outline-none w-full text-sm" />
+              <div className="w-6 h-6 rounded-full bg-[--color-border-warm] flex items-center justify-center text-[10px]">
+                {user?.first_name?.[0]?.toUpperCase() ?? "?"}
+              </div>
+              <input type="text" defaultValue={user?.first_name ?? ""} className="bg-transparent outline-none w-full text-sm" />
             </div>
           </div>
           <div className="space-y-2">
             <label className="text-xs font-medium text-[--color-text-secondary]">Comment souhaitez-vous que ProspectOS vous appelle ? *</label>
-            <input type="text" defaultValue="Kael" className="w-full bg-[--color-surface] border border-[--color-border] rounded-xl px-4 py-2.5 outline-none text-sm" />
+            <input type="text" defaultValue={user?.first_name ?? ""} className="w-full bg-[--color-surface] border border-[--color-border] rounded-xl px-4 py-2.5 outline-none text-sm" />
           </div>
         </div>
         
