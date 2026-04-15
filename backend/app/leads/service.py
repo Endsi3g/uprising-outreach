@@ -191,6 +191,7 @@ async def bulk_action(
                 lead.source = "Hunter.io"
             processed += 1
         await db.commit()
+        skipped = len(lead_ids) - processed
 
     elif action == "score":
         # AI Scoring action
@@ -223,6 +224,9 @@ async def bulk_action(
 
     else:
         raise BusinessRuleError(f"Unknown bulk action: '{action}'")
+
+    return BulkActionResponse(action=action, processed=processed, skipped=skipped, job_id=job_id)
+
 
 async def get_lead_stats(db: AsyncSession, workspace_id: uuid.UUID) -> dict:
     from app.leads.models import ActivityLog
@@ -281,7 +285,17 @@ async def get_lead_stats(db: AsyncSession, workspace_id: uuid.UUID) -> dict:
         .limit(5)
     )
     recent_replies = recent_replies_result.scalars().all()
-    
+
+    return {
+        "total_leads": total_leads,
+        "qualified_leads": qualified_leads,
+        "sent_emails": sent_emails,
+        "replied_leads": replied_leads,
+        "status_counts": status_counts,
+        "source_stats": source_stats,
+        "recent_replies": list(recent_replies),
+    }
+
 
 async def create_email_draft(
     db: AsyncSession, 
@@ -289,7 +303,7 @@ async def create_email_draft(
     lead_id: uuid.UUID | None, 
     subject: str, 
     content: str
-) -> any:
+) -> object:
     from app.leads.models_drafts import EmailDraft
     draft = EmailDraft(
         workspace_id=workspace_id,
