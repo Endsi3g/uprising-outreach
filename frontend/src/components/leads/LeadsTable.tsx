@@ -83,10 +83,12 @@ export default function LeadsTable({
                 <td className="px-4 py-4">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-[--color-surface-2] flex items-center justify-center font-medium text-[--color-text-secondary] text-xs">
-                      {lead.full_name?.[0] || "?"}
+                      {lead.first_name?.[0] || lead.last_name?.[0] || "?"}
                     </div>
                     <div className="min-w-0">
-                      <p className="font-medium text-[--color-text] truncate">{lead.full_name || "Prospect inconnu"}</p>
+                      <p className="font-medium text-[--color-text] truncate">
+                        {lead.first_name || lead.last_name ? `${lead.first_name ?? ""} ${lead.last_name ?? ""}`.strip() : "Prospect inconnu"}
+                      </p>
                       <p className="text-xs text-[--color-text-tertiary] truncate">{lead.company_name || "Entreprise inconnue"}</p>
                     </div>
                   </div>

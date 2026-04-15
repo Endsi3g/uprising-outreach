@@ -3,7 +3,7 @@ import uuid
 
 from sqlalchemy import Enum, ForeignKey, Index, String
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.shared.models import WorkspaceScopedModel
 
@@ -36,6 +36,10 @@ class Contact(WorkspaceScopedModel):
         nullable=False,
         default=VerificationStatus.UNVERIFIED,
     )
+
+    # Relationships
+    company: Mapped["Company"] = relationship("Company", back_populates="contacts")
+    leads: Mapped[list["Lead"]] = relationship("Lead", back_populates="contact")
 
     @property
     def full_name(self) -> str:

@@ -18,6 +18,10 @@ def create_app() -> FastAPI:
         docs_url="/api/docs" if settings.is_development else None,
         redoc_url="/api/redoc" if settings.is_development else None,
     )
+    
+    # ── Prometheus ────────────────────────────────────────────────────────────
+    from prometheus_fastapi_instrumentator import Instrumentator
+    Instrumentator().instrument(app).expose(app)
 
     # ── CORS ──────────────────────────────────────────────────────────────────
     app.add_middleware(

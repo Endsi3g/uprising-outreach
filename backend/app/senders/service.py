@@ -88,3 +88,84 @@ async def delete_sender(
     sender = await get_sender(db, workspace_id, sender_id)
     sender.deleted_at = datetime.now(UTC)
     await db.commit()
+
+
+async def register_google_sender(db: AsyncSession, workspace_id: uuid.UUID, credentials) -> SenderAccount:
+    """Register or update a Google sender account after OAuth flow."""
+    from googleapiclient.discovery import build
+    import google.oauth2.credentials
+    
+    # Get user email using the credentials
+    service = build("oauth2", "v2", credentials=credentials)
+    user_info = service.userinfo().get().execute()
+    email = user_info.get("email")
+    name = user_info.get("name", "")
+    
+    if not email:
+        raise ValueError("Google OAuth response did not contain an email address.")
+    
+    # Check if sender already exists
+    result = await db.execute(
+        select(SenderAccount).where(
+            SenderAccount.workspace_id == workspace_id,
+            SenderAccount.email_address == email,
+            SenderAccount.deleted_at.is_(None)
+        )
+    )
+    sender = result.scalar_one_or_none()
+    
+    if not sender:
+        sender = SenderAccount(
+            workspace_id=workspace_id,
+            email_address=email,
+            display_name=name,
+            provider="gmail",
+            status=SenderStatus.ACTIVE
+        )
+        db.add(sender)
+    
+    # Update tokens
+    sender.oauth_access_token = credentials.token
+    sender.oauth_refresh_token = credentials.refresh_token or sender.oauth_refresh_token
+    sender.oauth_token_expires_at = credentials.expiry.isoformat() if credentials.expiry else None
+    sender.oauth_scopes = ",".join(credentials.scopes)
+    sender.status = SenderStatus.ACTIVE
+    
+    await db.refresh(sender)
+    return sender
+
+
+async def send_gmail(
+    sender_account: SenderAccount,
+    to_email: str,
+    subject: str,
+    content: str,
+) -> str:
+    """Send an email using Gmail API with the sender's OAuth tokens."""
+    import base64
+    from email.mime.text import MIMEText
+    from googleapiclient.discovery import build
+    from google.oauth2.credentials import Credentials
+    from app.config import settings
+
+    # Prepare credentials object
+    creds = Credentials(
+        token=sender_account.oauth_access_token,
+        refresh_token=sender_account.oauth_refresh_token,
+        token_uri="https://oauth2.googleapis.com/token",
+        client_id=settings.google_client_id,
+        client_secret=settings.google_client_secret,
+    )
+
+    # Build service
+    service = build("gmail", "v1", credentials=creds)
+
+    # Create message
+    message = MIMEText(content)
+    message["to"] = to_email
+    message["subject"] = subject
+    raw = base64.urlsafe_b64encode(message.as_bytes()).decode()
+    
+    # Send
+    sent_message = service.users().messages().send(userId="me", body={"raw": raw}).execute()
+    return sent_message["id"]

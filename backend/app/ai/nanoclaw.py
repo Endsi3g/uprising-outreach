@@ -47,9 +47,6 @@ class NanoClawAssistant:
         """
         Analyse la demande, utilise des outils si nécessaire, et répond.
         """
-        if not self.client:
-            return {"suggested_action": None, "response_prefix": "Erreur: Configuration Anthropic manquante."}
-
         from app.projects.service import create_project
         from app.projects.schemas import ProjectCreate
         from app.leads.service import get_lead_stats, create_email_draft, trigger_linkedin_enrichment
@@ -87,7 +84,7 @@ class NanoClawAssistant:
             },
             {
                 "name": "capture_linkedin_lead",
-                "description": "Lanche la capture d'un profil LinkedIn via Playwright.",
+                "description": "Lance la capture d'un profil LinkedIn via Playwright.",
                 "input_schema": {
                     "type": "object",
                     "properties": {
@@ -119,21 +116,34 @@ class NanoClawAssistant:
         )
 
         try:
-            # 1. Initial call
-            response = await self.client.messages.create(
-                model="claude-3-haiku-20240307",
-                max_tokens=1024,
-                system=system_prompt,
-                messages=[{"role": "user", "content": user_input}],
-                tools=tools
-            )
+            # 1. First Pass: Call LLM (Claude or Ollama)
+            if self.client:
+                response = await self.client.messages.create(
+                    model="claude-3-haiku-20240307",
+                    max_tokens=1024,
+                    system=system_prompt,
+                    messages=[{"role": "user", "content": user_input}],
+                    tools=tools
+                )
+                stop_reason = response.stop_reason
+                assistant_content = response.content
+            else:
+                from app.ai.ollama_client import call_ollama
+                res = await call_ollama(
+                    model="llama3.1", # Modèle supportant le tool calling
+                    system=system_prompt, 
+                    messages=[{"role": "user", "content": user_input}], 
+                    tools=tools
+                )
+                stop_reason = res["stop_reason"]
+                assistant_content = res["content"]
 
+            # 2. Handle Tool Use
             suggested_action = None
-
-            if response.stop_reason == "tool_use":
-                tool_use = next(block for block in response.content if block.type == "tool_use")
-                tool_name = tool_use.name
-                tool_input = tool_use.input
+            if stop_reason == "tool_use":
+                tool_use = next(block for block in assistant_content if block.get("type") == "tool_use")
+                tool_name = tool_use.get("name")
+                tool_input = tool_use.get("input")
                 tool_result = "Action effectuée avec succès."
 
                 if tool_name == "get_crm_stats":
@@ -143,7 +153,6 @@ class NanoClawAssistant:
                         "qualifies": stats["qualified_leads"],
                         "reponses": stats["replied_leads"]
                     })
-                    suggested_action = None
                 elif tool_name == "create_crm_project":
                     await create_project(db_session, workspace_id, ProjectCreate(**tool_input))
                     tool_result = f"Projet '{tool_input.get('name')}' créé dans ProspectOS."
@@ -161,18 +170,43 @@ class NanoClawAssistant:
                     if apify_token:
                         tool_result = f"Recherche de prospects lancée sur Apify pour la requête : '{tool_input.get('query')}'. Les leads seront bientôt disponibles."
                     else:
-                        tool_result = "Action impossible : APIFY_TOKEN non configuré dans l'environnement."
+                        tool_result = "Action impossible : APIFY_TOKEN non configuré."
                     suggested_action = "/leads"
 
-                # Final response with tool results
-                if not self.client:
+                # 3. Final Response with Tool Output
+                if self.client:
+                    final_response = await self.client.messages.create(
+                        model="claude-3-haiku-20240307",
+                        max_tokens=1024,
+                        system=system_prompt,
+                        messages=[
+                            {"role": "user", "content": user_input},
+                            {"role": "assistant", "content": assistant_content},
+                            {
+                                "role": "user",
+                                "content": [
+                                    {
+                                        "type": "tool_result",
+                                        "tool_use_id": tool_use.get("id"),
+                                        "content": tool_result
+                                    }
+                                ]
+                            }
+                        ],
+                        tools=tools
+                    )
+                    return {
+                        "suggested_action": suggested_action, 
+                        "response_prefix": final_response.content[0].text
+                    }
+                else:
                     from app.ai.ollama_client import call_ollama
                     res = await call_ollama(
                         model="llama3.1",
                         system=system_prompt,
                         messages=[
                             {"role": "user", "content": user_input},
-                            {"role": "assistant", "content": [{"type": "tool_use", "name": tool_name, "input": tool_input}]},
+                            {"role": "assistant", "content": assistant_content},
                             {"role": "user", "content": [{"type": "tool_result", "content": tool_result}]}
                         ],
                         tools=tools
@@ -181,80 +215,10 @@ class NanoClawAssistant:
                         "suggested_action": suggested_action, 
                         "response_prefix": res["content"][0]["text"]
                     }
-                else:
-                    try:
-                        final_response = await self.client.messages.create(
-                            model="claude-3-haiku-20240307",
-                            max_tokens=1024,
-                            system=system_prompt,
-                            messages=[
-                                {"role": "user", "content": user_input},
-                                {"role": "assistant", "content": response.content},
-                                {
-                                    "role": "user",
-                                    "content": [
-                                        {
-                                            "type": "tool_result",
-                                            "tool_use_id": tool_use.id,
-                                            "content": tool_result
-                                        }
-                                    ]
-                                }
-                            ],
-                            tools=tools
-                        )
-                        return {
-                            "suggested_action": suggested_action, 
-                            "response_prefix": final_response.content[0].text
-                        }
-                    except Exception as e:
-                        logger.error(f"Claude error in final tool response: {e}. Falling back to Ollama.")
-                        from app.ai.ollama_client import call_ollama
-                        res = await call_ollama(
-                            model="llama3.1",
-                            system=system_prompt,
-                            messages=[
-                                {"role": "user", "content": user_input},
-                                {"role": "assistant", "content": [{"type": "tool_use", "name": tool_name, "input": tool_input}]},
-                                {"role": "user", "content": [{"type": "tool_result", "content": tool_result}]}
-                            ],
-                            tools=tools
-                        )
-                        return {
-                            "suggested_action": suggested_action, 
-                            "response_prefix": res["content"][0]["text"]
-                        }
 
             return {
                 "suggested_action": None, 
-                "response_prefix": response.content[0].text
-            }
-
-        except Exception as e:
-            logger.error(f"Erreur NanoClaw Agency: {e}")
-            return {"suggested_action": None, "response_prefix": "Désolé, une erreur est survenue lors de l'exécution de cette tâche."}
-     {"role": "assistant", "content": response.content},
-                        {
-                            "role": "user",
-                            "content": [
-                                {
-                                    "type": "tool_result",
-                                    "tool_use_id": tool_use.id,
-                                    "content": tool_result
-                                }
-                            ]
-                        }
-                    ],
-                    tools=tools
-                )
-                return {
-                    "suggested_action": suggested_action, 
-                    "response_prefix": final_response.content[0].text
-                }
-
-            return {
-                "suggested_action": None, 
-                "response_prefix": response.content[0].text
+                "response_prefix": assistant_content[0].get("text")
             }
 
         except Exception as e:

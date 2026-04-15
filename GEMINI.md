@@ -19,25 +19,16 @@ The project is currently in a documentation/design phase. All specifications liv
 
 ```bash
 # Start full dev environment (postgres, redis, backend, worker, frontend, mailhog)
-make dev
+make dev             # Linux/macOS
+./make.ps1 dev      # Windows (PowerShell)
 
 # Run database migrations
 make migrate
+./make.ps1 migrate
 
 # Run all tests
 make test
-
-# Backend only
-make test-backend                    # all backend tests
-make test-backend-unit               # unit tests only
-make test-backend-integration        # integration tests only
-
-# Frontend only
-make test-frontend                   # vitest
-
-# Linting
-make lint                            # ruff + mypy + eslint + tsc
-make format                          # ruff format + prettier
+./make.ps1 test
 
 # Useful shells
 make shell-backend                   # bash inside backend container

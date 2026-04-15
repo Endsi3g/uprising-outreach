@@ -22,6 +22,11 @@ from app.leads.schemas import (
 )
 from app.shared.pagination import Page
 
+class EmailPayload(BaseModel):
+    subject: str = Field(..., min_length=1)
+    content: str = Field(..., min_length=1)
+    sender_id: uuid.UUID | None = None
+
 router = APIRouter(prefix="/leads", tags=["leads"])
 
 
@@ -43,6 +48,7 @@ async def list_leads(
     score_min: int | None = Query(None),
     score_max: int | None = Query(None),
     source: str | None = Query(None),
+    q: str | None = Query(None),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Page[LeadResponse]:
@@ -54,7 +60,7 @@ async def list_leads(
         score_max=score_max,
         source=source,
     )
-    return await service.list_leads(db, current_user.workspace_id, filters, cursor, limit)
+    return await service.list_leads(db, current_user.workspace_id, filters, cursor, limit, q=q)
 
 
 @router.post("", response_model=LeadResponse, status_code=201)
@@ -64,7 +70,21 @@ async def create_lead(
     db: AsyncSession = Depends(get_db),
 ) -> LeadResponse:
     lead = await service.create_lead(db, current_user.workspace_id, payload)
-    return LeadResponse.model_validate(lead)
+    # The service now returns an object with contact/company loaded
+    lead_dict = {c.name: getattr(lead, c.name) for c in lead.__table__.columns}
+    if lead.contact:
+        lead_dict.update({
+            "first_name": lead.contact.first_name,
+            "last_name": lead.contact.last_name,
+            "email": lead.contact.email,
+            "job_title": lead.contact.job_title,
+        })
+    if lead.company:
+        lead_dict.update({
+            "company_name": lead.company.name,
+            "domain": lead.company.domain,
+        })
+    return LeadResponse.model_validate(lead_dict)
 
 
 @router.get("/{lead_id}", response_model=LeadResponse)
@@ -73,8 +93,39 @@ async def get_lead(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> LeadResponse:
-    lead = await service.get_lead(db, current_user.workspace_id, lead_id)
-    return LeadResponse.model_validate(lead)
+) -> LeadResponse:
+    from sqlalchemy.orm import joinedload
+    from sqlalchemy import select
+    from app.leads.models import Lead
+    
+    result = await db.execute(
+        select(Lead)
+        .options(joinedload(Lead.contact), joinedload(Lead.company))
+        .where(
+            Lead.id == lead_id,
+            Lead.workspace_id == current_user.workspace_id,
+            Lead.deleted_at.is_(None),
+        )
+    )
+    lead = result.scalar_one_or_none()
+    if not lead:
+        from app.shared.exceptions import raise_not_found
+        raise_not_found("Lead", str(lead_id))
+        
+    lead_dict = {c.name: getattr(lead, c.name) for c in lead.__table__.columns}
+    if lead.contact:
+        lead_dict.update({
+            "first_name": lead.contact.first_name,
+            "last_name": lead.contact.last_name,
+            "email": lead.contact.email,
+            "job_title": lead.contact.job_title,
+        })
+    if lead.company:
+        lead_dict.update({
+            "company_name": lead.company.name,
+            "domain": lead.company.domain,
+        })
+    return LeadResponse.model_validate(lead_dict)
 
 
 @router.patch("/{lead_id}", response_model=LeadResponse)
@@ -97,7 +148,7 @@ async def delete_lead(
     await service.delete_lead(db, current_user.workspace_id, lead_id)
 
 
-@router.post("/bulk-action", response_model=BulkActionResponse)
+@router.post("/bulk", response_model=BulkActionResponse)
 async def bulk_action(
     payload: BulkActionRequest,
     current_user: User = Depends(
@@ -265,3 +316,69 @@ async def get_lead_activity(
         ],
         "pagination": page["pagination"],
     }
+
+
+@router.post("/{lead_id}/email")
+async def send_lead_email(
+    lead_id: uuid.UUID,
+    payload: EmailPayload,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    from app.senders import service as sender_service
+    from app.leads import service as lead_service
+    from app.senders.models import SenderAccount, SenderStatus
+    from app.shared.exceptions import BusinessRuleError
+    from sqlalchemy import select
+
+    # 1. Get lead and contact email
+    lead = await lead_service.get_lead(db, current_user.workspace_id, lead_id)
+    if not lead.contact or not lead.contact.email:
+        raise BusinessRuleError("Lead has no contact or email address.")
+
+    # 2. Get sender account
+    if payload.sender_id:
+        sender = await sender_service.get_sender(db, current_user.workspace_id, payload.sender_id)
+    else:
+        # Get first active sender for workspace
+        result = await db.execute(
+            select(SenderAccount).where(
+                SenderAccount.workspace_id == current_user.workspace_id,
+                SenderAccount.status == SenderStatus.ACTIVE,
+                SenderAccount.deleted_at.is_(None)
+            )
+        )
+        sender = result.scalar_one_or_none()
+    
+    if not sender:
+        raise BusinessRuleError("No active sender account found. Please connect Gmail first.")
+
+    # 3. Send email
+    try:
+        message_id = await sender_service.send_gmail(
+            sender,
+            lead.contact.email,
+            payload.subject,
+            payload.content
+        )
+        
+        # 4. Log activity
+        from app.leads.models import ActivityLog
+        activity = ActivityLog(
+            workspace_id=current_user.workspace_id,
+            entity_type="lead",
+            entity_id=lead_id,
+            actor_id=current_user.id,
+            event_type="email_sent",
+            payload={
+                "message_id": message_id,
+                "sender_email": sender.email_address,
+                "subject": payload.subject
+            }
+        )
+        db.add(activity)
+        await db.commit()
+        
+        return {"status": "success", "message_id": message_id}
+    except Exception as e:
+        raise BusinessRuleError(f"Email sending failed: {str(e)}")

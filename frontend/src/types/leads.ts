@@ -10,10 +10,15 @@ export interface Lead {
   source: string | null;
   notes: string | null;
   enrichment_status: string | null;
-  full_name?: string;
-  company_name?: string;
-  email?: string;
-  title?: string;
+  
+  // Flattened Fields
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
+  job_title: string | null;
+  company_name: string | null;
+  domain: string | null;
+  
   next_action: string | null;
   created_at: string;
   updated_at: string;

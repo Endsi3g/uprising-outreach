@@ -1,6 +1,9 @@
 param (
-    [string]$ExtensionPath = "$PSScriptRoot\..\chrome-extension"
+    [string]$ExtensionPath = (Join-Path $PSScriptRoot "..\chrome-extension")
 )
+
+# Resolve to absolute path
+$ExtensionPath = (Get-Item $ExtensionPath).FullName
 
 $ChromePath = "C:\Program Files\Google\Chrome\Application\chrome.exe"
 

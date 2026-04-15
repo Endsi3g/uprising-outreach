@@ -1,0 +1,21 @@
+first_name,last_name,email,company_name,domain,job_title,sector,city
+Jean,Tremblay,jean.tremblay@pme-qc.ca,Tremblay & Fils,tremblay-fils.ca,Directeur Général,Construction,Montréal
+Marie,Gagnon,m.gagnon@techquebec.com,TechQuébec Solutions,techquebec.com,CEO,Informatique,Québec
+Pierre,Leblanc,p.leblanc@distrib-nord.qc.ca,Distribution Nord-Sud,distrib-nord.qc.ca,Directeur des Ventes,Logistique,Trois-Rivières
+Sophie,Bouchard,s.bouchard@agence-crea.com,Créativité Montréal,agence-crea.com,Directrice Artistique,Marketing,Montréal
+Luc,Petit,l.petit@menuiserie-elite.ca,Menuiserie Élite,menuiserie-elite.ca,Propriétaire,Manufacturier,Sherbrooke
+Isabelle,Côté,i.cote@santex.qc.ca,SanteX Solutions,santex.qc.ca,Directrice RH,Santé,Laval
+Marc,Roy,m.roy@acier-provincial.com,Acier Provincial Inc.,acier-provincial.com,Chef de Production,Industriel,Bécancour
+Chantal,Lévesques,c.levesque@com-expert.ca,ComExpert,com-expert.ca,Consultante Senior,Services,Gatineau
+Sylvain,Fortin,s.fortin@paysage-estrie.qc.ca,Paysagement Estrie,paysage-estrie.qc.ca,Gérant,Services,Magog
+Anik,Dubois,a.dubois@boutique-mode.ca,Mode Urbaine,boutique-mode.ca,Propriétaire,Commerce,Montréal
+Robert,Gauthier,r.gauthier@garage-pro.qc.ca,Garage Pro,garage-pro.qc.ca,Mécanicien Chef,Automobile,Lévis
+Caroline,Pelletier,c.pelletier@assurance-vie.com,Assurances Pelletier,assurance-vie.com,Agente Principale,Finance,Rimouski
+Benoit,Morin,b.morin@restau-bon.ca,Le Bon Goût Resto,restau-bon.ca,Chef Propriétaire,Restauration,Drummondville
+Nathalie,Laporte,n.laporte@notaire-qc.ca,Laporte & Associés,notaire-qc.ca,Notaire,Légal,Saint-Jérôme
+André,Lavoie,a.lavoie@trans-canada.qc.ca,Transport Lavoie,trans-canada.qc.ca,Chauffeur-Propriétaire,Transport,Alma
+Hélène,Simard,h.simard@bijoux-simard.com,Bijouterie Simard,bijoux-simard.com,Designer,Commerce,Chicoutimi
+Jacques,Mercier,j.mercier@bois-nord.ca,Boiserie du Nord,bois-nord.ca,Contremaître,Forêt,Val-d'Or
+Josée,Beaulieu,j.beaulieu@agro-plus.qc.ca,AgroPlus,agro-plus.qc.ca,Agronome,Agriculture,Saint-Hyacinthe
+Michel,Dufour,m.dufour@plombier-expert.com,Plomberie Dufour,plombier-expert.com,Plombier,Services,Sept-Îles
+Line,Caron,l.caron@immo-provincial.ca,Immobilier Provincial,immo-provincial.ca,Courtier Immobilier,Immobilier,Granby

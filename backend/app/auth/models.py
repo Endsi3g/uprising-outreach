@@ -4,10 +4,10 @@ from datetime import datetime
 
 from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
-from app.shared.models import TimestampMixin
+from app.shared.models import TimestampMixin, WorkspaceScopedModel
 
 
 class Role(str, enum.Enum):
@@ -16,6 +16,13 @@ class Role(str, enum.Enum):
     SDR = "sdr"
     CLOSER = "closer"
     VIEWER = "viewer"
+
+
+class InvitationStatus(str, enum.Enum):
+    PENDING = "pending"
+    ACCEPTED = "accepted"
+    EXPIRED = "expired"
+    REVOKED = "revoked"
     REVIEWER = "reviewer"
 
 
@@ -44,3 +51,30 @@ class User(Base, TimestampMixin):
     @property
     def full_name(self) -> str:
         return f"{self.first_name} {self.last_name}".strip()
+
+    # Relationships
+    workspace: Mapped["Workspace"] = relationship("Workspace", back_populates="users")
+
+
+class Invitation(WorkspaceScopedModel):
+    __tablename__ = "invitations"
+
+    email: Mapped[str] = mapped_column(String(320), nullable=False)
+    role: Mapped[Role] = mapped_column(
+        Enum(Role, name="role"), nullable=False, default=Role.SDR
+    )
+    token: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    status: Mapped[InvitationStatus] = mapped_column(
+        Enum(InvitationStatus, name="invitation_status"),
+        nullable=False,
+        default=InvitationStatus.PENDING,
+    )
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    accepted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    invited_by_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+
+    invited_by: Mapped["User"] = relationship("User")

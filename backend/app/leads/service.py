@@ -1,7 +1,8 @@
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, or_
+from sqlalchemy.orm import selectinload, joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.leads.models import Lead, LeadStatus, SuppressionEntry
@@ -24,6 +25,7 @@ async def list_leads(
     filters: LeadFilter,
     cursor: str | None,
     limit: int,
+    q: str | None = None,
 ) -> Page[LeadResponse]:
     base_where = [
         Lead.workspace_id == workspace_id,
@@ -41,7 +43,27 @@ async def list_leads(
     if filters.source:
         base_where.append(Lead.source == filters.source)
 
-    query = select(Lead).where(*base_where).order_by(Lead.created_at.desc(), Lead.id.desc())
+    if q:
+        from app.contacts.models import Contact
+        from app.companies.models import Company
+        search_filter = or_(
+            Contact.first_name.ilike(f"%{q}%"),
+            Contact.last_name.ilike(f"%{q}%"),
+            Contact.email.ilike(f"%{q}%"),
+            Company.name.ilike(f"%{q}%"),
+            Company.domain.ilike(f"%{q}%"),
+            Lead.source.ilike(f"%{q}%"),
+        )
+        base_where.append(search_filter)
+
+    query = (
+        select(Lead)
+        .join(Contact, Lead.contact_id == Contact.id, isouter=True)
+        .join(Company, Lead.company_id == Company.id, isouter=True)
+        .options(joinedload(Lead.contact), joinedload(Lead.company))
+        .where(*base_where)
+        .order_by(Lead.created_at.desc(), Lead.id.desc())
+    )
 
     if cursor:
         created_at, cid = decode_cursor(cursor)
@@ -59,8 +81,26 @@ async def list_leads(
     items = list(result.scalars().all())
 
     page = build_page(items, limit, total)
+    
+    data = []
+    for l in page["data"]:
+        lead_dict = {c.name: getattr(l, c.name) for c in l.__table__.columns}
+        if l.contact:
+            lead_dict.update({
+                "first_name": l.contact.first_name,
+                "last_name": l.contact.last_name,
+                "email": l.contact.email,
+                "job_title": l.contact.job_title,
+            })
+        if l.company:
+            lead_dict.update({
+                "company_name": l.company.name,
+                "domain": l.company.domain,
+            })
+        data.append(LeadResponse.model_validate(lead_dict))
+
     return Page[LeadResponse](
-        data=[LeadResponse.model_validate(l) for l in page["data"]],
+        data=data,
         pagination=page["pagination"],
     )
 
@@ -68,11 +108,39 @@ async def list_leads(
 async def create_lead(
     db: AsyncSession, workspace_id: uuid.UUID, payload: LeadCreate
 ) -> Lead:
-    lead = Lead(workspace_id=workspace_id, **payload.model_dump())
+    from app.contacts.models import Contact
+    from app.companies.models import Company
+    
+    data = payload.model_dump(exclude={"contact", "company"})
+    
+    # Handle inline creation
+    if payload.company and not payload.company_id:
+        company = Company(workspace_id=workspace_id, **payload.company.model_dump())
+        db.add(company)
+        await db.flush()
+        data["company_id"] = company.id
+        
+    if payload.contact and not payload.contact_id:
+        contact_data = payload.contact.model_dump()
+        if data.get("company_id"):
+            contact_data["company_id"] = data["company_id"]
+        contact = Contact(workspace_id=workspace_id, **contact_data)
+        db.add(contact)
+        await db.flush()
+        data["contact_id"] = contact.id
+
+    lead = Lead(workspace_id=workspace_id, **data)
     db.add(lead)
     await db.commit()
     await db.refresh(lead)
-    return lead
+    
+    # Reload with relationships for response
+    result = await db.execute(
+        select(Lead)
+        .options(joinedload(Lead.contact), joinedload(Lead.company))
+        .where(Lead.id == lead.id)
+    )
+    return result.scalar_one()
 
 
 async def get_lead(

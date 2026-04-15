@@ -7,6 +7,8 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Input, Button, Badge } from "@/components/ui";
 import LeadsTable from "@/components/leads/LeadsTable";
 import { ImportModal } from "@/components/leads/ImportModal";
+import { ComposeEmailModal } from "@/components/leads/ComposeEmailModal";
+import { NewLeadModal } from "@/components/leads/NewLeadModal";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLeadsStore } from "@/store/leads";
 import type { Lead, Page } from "@/types/leads";
@@ -25,6 +27,8 @@ export default function LeadsPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
+  const [isComposeModalOpen, setIsComposeModalOpen] = useState(false);
+  const [isNewLeadModalOpen, setIsNewLeadModalOpen] = useState(false);
   
   const { selectedIds, clearSelection, openImportModal } = useLeadsStore();
 
@@ -61,7 +65,8 @@ export default function LeadsPage() {
           actions={
             <div className="flex gap-2">
               <Button variant="secondary" size="sm">Exporter</Button>
-              <Button variant="primary" size="sm" onClick={openImportModal}>Importer des leads</Button>
+              <Button variant="secondary" size="sm" onClick={openImportModal}>Importer des leads</Button>
+              <Button variant="primary" size="sm" onClick={() => setIsNewLeadModalOpen(true)}>Nouveau Prospect</Button>
             </div>
           }
         />
@@ -190,18 +195,22 @@ export default function LeadsPage() {
                 <div className="flex-1 overflow-y-auto p-10 space-y-8 custom-scrollbar">
                   <div className="flex items-center gap-6">
                     <div className="w-20 h-20 rounded-2xl bg-[--color-surface] border border-[--color-border] flex items-center justify-center text-2xl font-semibold shadow-sm text-[--color-cta]">
-                      {(selectedLead as any).full_name?.[0] || "?"}
+                      {selectedLead.first_name?.[0] || selectedLead.last_name?.[0] || "?"}
                     </div>
                     <div>
-                      <p className="text-2xl font-serif font-medium text-[--color-text]">{(selectedLead as any).full_name || "Prospect inconnu"}</p>
-                      <p className="text-sm text-[--color-text-secondary] mt-1">{(selectedLead as any).title || "Contact"} @ <span className="text-[--color-cta] font-medium">{(selectedLead as any).company_name || "Entreprise"}</span></p>
+                      <p className="text-2xl font-serif font-medium text-[--color-text]">
+                        {selectedLead.first_name || selectedLead.last_name ? `${selectedLead.first_name ?? ""} ${selectedLead.last_name ?? ""}`.trim() : "Prospect inconnu"}
+                      </p>
+                      <p className="text-sm text-[--color-text-secondary] mt-1">
+                        {selectedLead.job_title || "Contact"} @ <span className="text-[--color-cta] font-medium">{selectedLead.company_name || "Entreprise"}</span>
+                      </p>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-8">
                     <div>
                       <p className="text-[10px] font-bold uppercase tracking-widest text-[--color-text-tertiary] mb-2">COORDONNÉES</p>
-                      <p className="text-sm font-medium text-[--color-text]">{(selectedLead as any).email || "Email non renseigné"}</p>
+                      <p className="text-sm font-medium text-[--color-text]">{selectedLead.email || "Email non renseigné"}</p>
                       <p className="text-xs text-[--color-text-tertiary] mt-1">Sourcing: {selectedLead.source || "Direct"}</p>
                     </div>
                     <div>
@@ -223,7 +232,13 @@ export default function LeadsPage() {
                   </div>
 
                   <div className="pt-8 flex gap-3">
-                    <Button variant="primary" className="flex-1">Écrire un Email</Button>
+                    <Button 
+                      variant="primary" 
+                      className="flex-1"
+                      onClick={() => setIsComposeModalOpen(true)}
+                    >
+                      Écrire un Email
+                    </Button>
                     <Button variant="secondary" className="flex-1">Assigner</Button>
                   </div>
                 </div>
@@ -236,6 +251,18 @@ export default function LeadsPage() {
       </AnimatePresence>
 
       <ImportModal />
+      <NewLeadModal 
+        isOpen={isNewLeadModalOpen} 
+        onClose={() => setIsNewLeadModalOpen(false)} 
+      />
+      
+      {selectedLead && (
+        <ComposeEmailModal 
+          isOpen={isComposeModalOpen} 
+          onClose={() => setIsComposeModalOpen(false)} 
+          lead={selectedLead}
+        />
+      )}
     </div>
   );
 }

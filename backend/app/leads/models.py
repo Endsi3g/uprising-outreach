@@ -3,7 +3,7 @@ import uuid
 
 from sqlalchemy import Enum, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.shared.models import WorkspaceScopedModel
 
@@ -57,13 +57,25 @@ class Lead(WorkspaceScopedModel):
         nullable=False,
         default=LeadTemperature.COLD,
     )
-    score: Mapped[int | None] = mapped_column(Integer, nullable=True)
     source: Mapped[str | None] = mapped_column(String(100), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     enrichment_status: Mapped[str | None] = mapped_column(String(50), nullable=True)
     next_action: Mapped[str | None] = mapped_column(String(200), nullable=True)
     # Store import metadata and custom fields
+    score: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    
+    active_campaign_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("campaigns.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     extra: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+
+    # Relationships
+    company: Mapped["Company"] = relationship("Company", back_populates="leads", lazy="selectin")
+    contact: Mapped["Contact"] = relationship("Contact", back_populates="leads", lazy="selectin")
+    owner: Mapped["User"] = relationship("User", back_populates="leads", lazy="selectin")
+    active_campaign: Mapped["Campaign"] = relationship("Campaign", back_populates="leads")
 
     __table_args__ = (
         Index("ix_leads_workspace_status", "workspace_id", "status"),

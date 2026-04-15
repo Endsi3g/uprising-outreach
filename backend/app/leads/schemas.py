@@ -5,6 +5,8 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from app.leads.models import LeadStatus, LeadTemperature
+from app.contacts.schemas import ContactCreate
+from app.companies.schemas import CompanyCreate
 
 
 class LeadCreate(BaseModel):
@@ -14,6 +16,10 @@ class LeadCreate(BaseModel):
     source: str | None = None
     notes: str | None = None
     extra: dict[str, Any] | None = None
+    
+    # Inline creation
+    contact: ContactCreate | None = None
+    company: CompanyCreate | None = None
 
 
 class LeadUpdate(BaseModel):
@@ -42,6 +48,14 @@ class LeadResponse(BaseModel):
     next_action: str | None
     created_at: datetime
     updated_at: datetime
+
+    # Flattened Fields (Joined from Contact/Company)
+    first_name: str | None = None
+    last_name: str | None = None
+    email: str | None = None
+    job_title: str | None = None
+    company_name: str | None = None
+    domain: str | None = None
 
     model_config = {"from_attributes": True}
 

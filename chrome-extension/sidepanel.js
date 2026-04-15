@@ -2,11 +2,15 @@
 // Connects to the main ProspectOS Backend for Intelligence
 
 let API_BASE_URL = "http://localhost:8000/api/v1";
+let API_TOKEN = "";
 
-// Load API URL from settings
-chrome.storage.sync.get(['apiUrl'], (result) => {
+// Load settings from storage
+chrome.storage.sync.get(['apiUrl', 'apiToken'], (result) => {
     if (result.apiUrl) {
         API_BASE_URL = result.apiUrl;
+    }
+    if (result.apiToken) {
+        API_TOKEN = result.apiToken;
     }
 });
 
@@ -14,6 +18,7 @@ const chatHistory = document.getElementById('chat-history');
 const userInput = document.getElementById('user-input');
 const sendButton = document.getElementById('send-button');
 const analyzeButton = document.getElementById('analyze-button');
+const captureButton = document.getElementById('capture-button');
 const settingsButton = document.getElementById('settings-btn');
 
 if (settingsButton) {
@@ -212,6 +217,68 @@ async function analyzePage() {
         } else {
             addMessage("assistant", "Erreur lors de l'analyse de la page. Vérifiez que l'URL est correcte et accessible par le serveur.");
         }
+    }
+}
+
+async function captureLead() {
+    addMessage("user", "Capture et enregistrement du prospect...");
+    
+    const loadingDiv = document.createElement('div');
+    loadingDiv.className = 'message assistant loading';
+    loadingDiv.innerHTML = '<div class="message-inner">Extraction et scoring IA en cours...</div>';
+    chatHistory.appendChild(loadingDiv);
+    chatHistory.scrollTop = chatHistory.scrollHeight;
+    
+    try {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        
+        if (!tab || !tab.url) throw new Error("URL introuvable.");
+
+        const response = await fetch(`${API_BASE_URL}/ai/capture-lead`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                ...(API_TOKEN ? { "Authorization": `Bearer ${API_TOKEN}` } : {})
+            },
+            body: JSON.stringify({
+                url: tab.url,
+                metadata: { title: tab.title }
+            })
+        });
+
+        if (!response.ok) throw new Error(`Erreur serveur: ${response.status}`);
+
+        const data = await response.json();
+        chatHistory.removeChild(loadingDiv);
+
+        if (data.error) throw new Error(data.error);
+
+        // Success Card
+        const tempClass = data.temperature === 'hot' ? 'score-hot' : (data.temperature === 'warm' ? 'score-warm' : 'score-cold');
+        const successHtml = `
+            <div class="lead-card">
+                <div class="score-badge ${tempClass}">Score: ${data.score}/100 (${data.temperature})</div>
+                <h3 style="margin:4px 0">${data.full_name}</h3>
+                <p style="font-size:12px; color:var(--color-stone-gray); margin-bottom:8px;">${data.job_title}</p>
+                <div style="font-size:13px; font-style:italic; border-top:1px solid var(--color-cream); padding-top:8px;">
+                    "${data.justification}"
+                </div>
+                <div style="margin-top:12px">
+                    <a href="http://localhost:3000/leads/${data.id}" target="_blank" style="font-size:12px; color:var(--color-terracotta); text-decoration:none; font-weight:600;">Voir dans le CRM →</a>
+                </div>
+            </div>
+        `;
+        
+        addMessage("assistant", "Prospect capturé avec succès ! Voici l'analyse :");
+        const lastMsg = chatHistory.lastElementChild;
+        const resultContainer = document.createElement('div');
+        resultContainer.innerHTML = successHtml;
+        lastMsg.querySelector('.message-inner').appendChild(resultContainer);
+
+    } catch (error) {
+        console.error("Capture Error:", error);
+        chatHistory.removeChild(loadingDiv);
+        addMessage("assistant", `Erreur lors de la capture: ${error.message}`);
     }
 }
 

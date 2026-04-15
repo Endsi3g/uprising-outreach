@@ -32,12 +32,30 @@ Write-Host "Running backend migrations..." -ForegroundColor Yellow
 # docker-compose run backend alembic upgrade head
 Write-Host "(Migrations step skipped, uncomment above to run if alembic setup is fully complete)" -ForegroundColor DarkGray
 
+# Ensure frontend dependencies are installed
+if (-Not (Test-Path "frontend\node_modules")) {
+    Write-Host "Frontend dependencies missing. Installing now..." -ForegroundColor Cyan
+    Set-Location -Path "frontend"
+    npm install
+    Set-Location -Path ".."
+}
+
 Write-Host "Starting Frontend (Next.js)..." -ForegroundColor Yellow
 Start-Process "powershell" -ArgumentList "-NoExit -Command cd frontend; npm run dev"
 
 Write-Host "Local dev environment is up!" -ForegroundColor Green
+Write-Host "Opening dashboards and docs..." -ForegroundColor Yellow
+
+# Auto-open browser tabs
+Start-Process "http://localhost:3000"                       # Frontend
+Start-Process "http://localhost:8000/api/docs"                # Backend Docs
+Start-Process "http://localhost:8025"                       # Mailhog
+Start-Process "http://localhost:3001/d/fastapi-obs/fastapi-observability?orgId=1&refresh=5s" # Grafana
+Start-Process "http://localhost:9090"                       # Prometheus
+
 Write-Host "Frontend running at: http://localhost:3000"
 Write-Host "Backend API running at: http://localhost:8000"
+Write-Host "Grafana running at: http://localhost:3001"
 Write-Host "Services running via Docker."
 
 exit 0

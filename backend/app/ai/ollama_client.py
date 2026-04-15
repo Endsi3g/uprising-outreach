@@ -4,7 +4,7 @@ from typing import Optional, List, Dict, Any
 
 logger = logging.getLogger(__name__)
 
-OLLAMA_URL = "http://localhost:11434/api/chat"
+OLLAMA_URL = "http://ollama:11434/api/chat"
 
 async def call_ollama(
     model: str,

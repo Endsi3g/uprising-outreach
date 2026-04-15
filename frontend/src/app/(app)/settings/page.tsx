@@ -14,7 +14,8 @@ type SettingTab =
   | "caps" 
   | "connectors" 
   | "claude_code" 
-  | "claude_chrome";
+  | "claude_chrome"
+  | "team";
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingTab>("general");
@@ -27,6 +28,7 @@ export default function SettingsPage() {
     { key: "usage" as const, label: "Utilisation" },
     { key: "caps" as const, label: "Capacités" },
     { key: "connectors" as const, label: "Connecteurs" },
+    { key: "team" as const, label: "Équipe" },
     { key: "claude_code" as const, label: "ProspectOS Code" },
     { key: "claude_chrome" as const, label: "ProspectOS dans Chrome", beta: true },
   ];
@@ -65,7 +67,9 @@ export default function SettingsPage() {
             {activeTab === "account" && <AccountSettings key="account" />}
             {activeTab === "privacy" && <PrivacySettings key="privacy" />}
             {activeTab === "usage" && <UsageSettings key="usage" />}
-            {!["general", "account", "privacy", "usage"].includes(activeTab) && (
+            {activeTab === "connectors" && <ConnectorsSettings key="connectors" />}
+            {activeTab === "team" && <TeamSettings key="team" />}
+            {!["general", "account", "privacy", "usage", "connectors", "team"].includes(activeTab) && (
               <motion.div 
                 key="placeholder"
                 initial={{ opacity: 0, y: 10 }}
@@ -380,6 +384,195 @@ function GeneralSettings() {
             </button>
           ))}
         </div>
+      </section>
+    </motion.div>
+  );
+}
+
+function ConnectorsSettings() {
+  const [connecting, setConnecting] = useState(false);
+
+  const connectGmail = async () => {
+    setConnecting(true);
+    try {
+      const response = await fetch("http://localhost:8000/api/v1/senders/oauth/gmail");
+      const data = await response.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      console.error("Failed to start OAuth:", error);
+      alert("Erreur lors de la connexion à Gmail.");
+    } finally {
+      setConnecting(false);
+    }
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-12">
+      <section className="space-y-6">
+        <h2 className="text-sm font-bold uppercase tracking-widest text-[--color-text-tertiary]">Comptes d'envoi</h2>
+        
+        <div className="p-6 rounded-2xl bg-[--color-surface] border border-[--color-border] flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-white border border-[--color-border] flex items-center justify-center text-xl shadow-sm">
+              📧
+            </div>
+            <div>
+              <p className="text-sm font-medium">Gmail / Google Workspace</p>
+              <p className="text-xs text-[--color-text-tertiary] mt-1">Connectez votre compte pour envoyer des séquences d'emails.</p>
+            </div>
+          </div>
+          <button 
+            onClick={connectGmail}
+            disabled={connecting}
+            className="px-6 py-2.5 rounded-xl bg-[--color-cta] text-white text-sm font-medium hover:opacity-90 transition-all shadow-sm flex items-center gap-2"
+          >
+            {connecting ? "Connexion..." : "Connecter Gmail"}
+          </button>
+        </div>
+
+        <div className="p-6 rounded-2xl bg-[--color-surface] border border-[--color-border] flex items-center justify-between opacity-60">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-white border border-[--color-border] flex items-center justify-center text-xl shadow-sm">
+              Ⓜ️
+            </div>
+            <div>
+              <p className="text-sm font-medium">Outlook / Microsoft 365</p>
+              <p className="text-xs text-[--color-text-tertiary] mt-1">Bientôt disponible.</p>
+            </div>
+          </div>
+          <button disabled className="px-6 py-2.5 rounded-xl bg-[--color-surface-2] text-[--color-text-tertiary] text-sm font-medium cursor-not-allowed">
+            Bientôt
+          </button>
+        </div>
+      </section>
+
+      <section className="space-y-6 border-t border-[--color-border] pt-12">
+        <h2 className="text-sm font-bold uppercase tracking-widest text-[--color-text-tertiary]">Enrichissement & Sourcing</h2>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="p-6 rounded-2xl bg-[--color-surface] border border-[--color-border] space-y-4">
+             <div className="flex items-center gap-3">
+               <span className="text-xl">🔗</span>
+               <p className="text-sm font-medium">LinkedIn</p>
+             </div>
+             <p className="text-xs text-[--color-text-tertiary]">Connectez l'extension Chrome pour enrichir depuis LinkedIn.</p>
+             <div className="flex items-center gap-2 text-[--color-cta] text-xs font-semibold">
+               Connecté <div className="w-1.5 h-1.5 rounded-full bg-[--color-cta]" />
+             </div>
+          </div>
+          <div className="p-6 rounded-2xl bg-[--color-surface] border border-[--color-border] space-y-4">
+             <div className="flex items-center gap-3">
+               <span className="text-xl">🕵️</span>
+               <p className="text-sm font-medium">Apify</p>
+             </div>
+             <p className="text-xs text-[--color-text-tertiary]">Utilisez Apify pour le scraping de leads à grande échelle.</p>
+             <button className="text-xs font-semibold hover:underline">Configurer la clé API ›</button>
+          </div>
+        </div>
+      </section>
+    </motion.div>
+  );
+}
+
+function TeamSettings() {
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState("sdr");
+  const [inviting, setInviting] = useState(false);
+
+  const inviteMember = async () => {
+    setInviting(true);
+    try {
+      const response = await fetch("http://localhost:8000/api/v1/auth/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, role }),
+      });
+      if (response.ok) {
+        alert("Invitation envoyée !");
+        setEmail("");
+      } else {
+        const error = await response.json();
+        alert(`Erreur: ${error.detail || "Impossible d'envoyer l'invitation"}`);
+      }
+    } catch (error) {
+      console.error("Invite failed:", error);
+    } finally {
+      setInviting(false);
+    }
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-12">
+      <section className="space-y-6">
+        <h2 className="text-sm font-bold uppercase tracking-widest text-[--color-text-tertiary]">Membres de l'équipe</h2>
+        
+        <div className="space-y-2">
+          {[
+            { name: "Kael (Vous)", email: "kael@uprising.studio", role: "Admin", status: "Active" },
+          ].map((member) => (
+            <div key={member.email} className="p-4 rounded-xl bg-[--color-surface] border border-[--color-border] flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-[--color-border-warm] flex items-center justify-center text-[10px] font-bold">
+                  {member.name[0]}
+                </div>
+                <div>
+                  <p className="text-sm font-medium">{member.name}</p>
+                  <p className="text-xs text-[--color-text-tertiary]">{member.email}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="text-[10px] px-2 py-0.5 rounded bg-[--color-surface-2] border border-[--color-border] font-bold uppercase tracking-wider text-[--color-text-tertiary]">
+                  {member.role}
+                </span>
+                <span className="text-[10px] text-[--color-cta] font-bold uppercase tracking-wider">
+                  {member.status}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="space-y-6 border-t border-[--color-border] pt-12">
+        <h2 className="text-sm font-bold uppercase tracking-widest text-[--color-text-tertiary]">Inviter un nouveau membre</h2>
+        
+        <div className="grid grid-cols-12 gap-4">
+          <div className="col-span-6">
+            <input 
+              type="email" 
+              placeholder="email@compte.com" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full bg-[--color-surface] border border-[--color-border] rounded-xl px-4 py-2.5 outline-none text-sm"
+            />
+          </div>
+          <div className="col-span-3">
+            <select 
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              className="w-full bg-[--color-surface] border border-[--color-border] rounded-xl px-4 py-2.5 outline-none text-sm appearance-none"
+            >
+              <option value="admin">Admin</option>
+              <option value="manager">Manager</option>
+              <option value="sdr">SDR</option>
+              <option value="closer">Closer</option>
+              <option value="viewer">Viewer</option>
+            </select>
+          </div>
+          <div className="col-span-3">
+            <button 
+              onClick={inviteMember}
+              disabled={inviting || !email}
+              className="w-full h-full rounded-xl bg-[--color-cta] text-white text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-all"
+            >
+              Inviter
+            </button>
+          </div>
+        </div>
+        <p className="text-xs text-[--color-text-tertiary]">
+          L'utilisateur recevra un lien d'invitation par email (Valide pendant 7 jours).
+        </p>
       </section>
     </motion.div>
   );

@@ -1,6 +1,7 @@
 import uuid
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
+from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_user, require_role
@@ -15,6 +16,44 @@ from app.senders.schemas import (
 )
 
 router = APIRouter(prefix="/senders", tags=["senders"])
+
+
+@router.get("/oauth/gmail")
+async def start_google_oauth(
+    current_user: User = Depends(get_current_user),
+):
+    """Start the Google OAuth flow for Gmail."""
+    from app.senders.oauth import get_google_auth_url
+    # Use workspace_id as state for simple validation
+    state = str(current_user.workspace_id)
+    url = get_google_auth_url(state=state)
+    return {"url": url}
+
+
+@router.get("/oauth/gmail/callback")
+async def google_oauth_callback(
+    request: Request,
+    state: str,
+    code: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """Callback for Google OAuth."""
+    from app.senders.oauth import get_google_auth_flow
+    from app.senders import service
+    import uuid
+    
+    workspace_id = uuid.UUID(state)
+    flow = get_google_auth_flow()
+    flow.fetch_token(code=code)
+    credentials = flow.credentials
+    
+    # Process the tokens and create/update sender account
+    await service.register_google_sender(db, workspace_id, credentials)
+    
+    # Redirect back to frontend
+    from app.config import settings
+    frontend_url = f"{settings.cors_origins_list[0]}/settings/senders?success=true"
+    return RedirectResponse(url=frontend_url)
 
 
 @router.get("", response_model=list[SenderResponse])

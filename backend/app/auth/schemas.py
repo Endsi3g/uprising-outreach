@@ -1,8 +1,9 @@
 import uuid
 
 from pydantic import BaseModel, EmailStr, Field
+from datetime import datetime
 
-from app.auth.models import Role
+from app.auth.models import Role, InvitationStatus
 
 
 class RegisterRequest(BaseModel):
@@ -37,5 +38,22 @@ class UserResponse(BaseModel):
     last_name: str
     role: Role
     is_active: bool
+
+    model_config = {"from_attributes": True}
+
+
+class InvitationCreate(BaseModel):
+    email: EmailStr
+    role: Role = Role.SDR
+
+
+class InvitationResponse(BaseModel):
+    id: uuid.UUID
+    email: EmailStr
+    role: Role
+    token: str
+    status: InvitationStatus
+    expires_at: datetime
+    invited_by_id: uuid.UUID
 
     model_config = {"from_attributes": True}
